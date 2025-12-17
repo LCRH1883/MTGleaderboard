@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:minWidth="@dimen/dialog_width"
+    android:background="?attr/scBackgroundColor"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:elevation="0dp"
+        app:navigationIcon="@drawable/ic_close"
+        app:title="@string/create_counter" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/edit_counter_horizontal_margin"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/Header3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/create_counter_type_label" />
+
+                <Spinner
+                    android:id="@+id/counter_type_spinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spinner_start_margin" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/counter_text_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/edit_counter_horizontal_margin"
+                android:layout_marginTop="@dimen/edit_counter_section_spacing"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/input_counter_text_label"
+                    style="@style/Header3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/create_counter_name_label" />
+
+                <EditText
+                    android:id="@+id/input_counter_text"
+                    style="@style/NameEditText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/header_section_header_top_margin"
+                    android:ems="4"
+                    android:hint="@string/create_counter_text_hint"
+                    android:maxLength="@integer/counter_text_max_chars" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/counter_url_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/edit_counter_horizontal_margin"
+                android:layout_marginTop="@dimen/edit_counter_section_spacing"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/input_counter_url_label"
+                    style="@style/Header3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/create_counter_url_label" />
+
+                <EditText
+                    android:id="@+id/input_counter_url"
+                    style="@style/UrlEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/header_section_header_top_margin"
+                    android:hint="@string/create_counter_url_hint" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/counter_local_image_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/edit_counter_section_spacing"
+                android:gravity="center_vertical"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/edit_counter_horizontal_margin">
+
+                <TextView
+                    android:id="@+id/counter_local_image_label"
+                    style="@style/Header3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/create_counter_local_uri_label" />
+
+                <TextView
+                    android:id="@+id/counter_local_image_name"
+                    style="@style/SelectableText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:ellipsize="end"
+                    android:gravity="center_vertical"
+                    android:maxLines="1"
+                    android:minHeight="48dp"
+                    android:text="@string/create_counter_local_uri_hint" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/counter_full_art_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/edit_counter_horizontal_margin">
+
+                <TextView
+                    android:id="@+id/full_art_label"
+                    style="@style/Header3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/create_counter_full_art_label"
+                    android:textSize="14sp" />
+
+                <CheckBox
+                    android:id="@+id/full_art_checkbox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp" />
+
+            </LinearLayout>
+
+
+            <TextView
+                android:id="@+id/input_counter_starting_value_label"
+                style="@style/Header3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/edit_counter_horizontal_margin"
+                android:layout_marginTop="@dimen/edit_counter_section_spacing"
+                android:text="@string/counter_starting_value" />
+
+            <EditText
+                android:id="@+id/input_counter_starting_value"
+                style="@style/ValueEditText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/edit_counter_horizontal_margin"
+                android:layout_marginTop="@dimen/header_section_header_top_margin"
+                android:imeOptions="actionDone"
+                android:maxEms="4" />
+
+            <TextView
+                android:id="@+id/counter_preview_label"
+                style="@style/Header2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/edit_counter_horizontal_margin"
+                android:layout_marginTop="@dimen/edit_counter_section_spacing"
+                android:gravity="center"
+                android:text="@string/create_counter_preview" />
+
+            <com.kenkeremath.mtgcounter.view.counter.SecondaryCounterView
+                android:id="@+id/counter_preview_view"
+                android:layout_width="100dp"
+                android:layout_height="120dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/default_padding" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/default_padding" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <Button
+        android:id="@+id/save_button"
+        style="@style/MenuButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/edit_counter_section_spacing"
+        android:text="@string/save" />
+
+</LinearLayout>

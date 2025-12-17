@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_half_vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.50" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_half_horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.50" />
+
+    <com.github.rongi.rotate_layout.layout.RotateLayout
+        style="@style/PlayerContainer"
+        android:id="@+id/solo_panel"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <com.github.rongi.rotate_layout.layout.RotateLayout
+        style="@style/PlayerContainer"
+        android:id="@+id/top_panel"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        tools:background="@color/light_green"
+        app:layout_constraintBottom_toTopOf="@+id/left_panel_1"
+        app:layout_constraintVertical_weight="2"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.github.rongi.rotate_layout.layout.RotateLayout
+        style="@style/PlayerContainer"
+        android:id="@+id/bottom_panel"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        tools:background="@color/turkwise"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_weight="2"
+        app:layout_constraintTop_toBottomOf="@+id/left_panel_3" />
+
+    <com.github.rongi.rotate_layout.layout.RotateLayout
+        style="@style/PlayerContainer"
+        android:id="@+id/right_panel_1"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        tools:background="@color/light_orange"
+        app:layout_constraintStart_toEndOf="@+id/guideline_half_vertical"
+        app:layout_constraintBottom_toTopOf="@+id/right_panel_2"
+        app:layout_constraintVertical_weight="3"
+        app:layout_constraintTop_toBottomOf="@+id/top_panel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_weight="1" />
+
+    <com.github.rongi.rotate_layout.layout.RotateLayout
+        style="@style/PlayerContainer"
+        android:id="@+id/right_panel_2"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        tools:background="@color/light_red"
+        app:layout_constraintStart_toEndOf="@+id/guideline_half_vertical"
+        app:layout_constraintBottom_toTopOf="@+id/right_panel_3"
+        app:layout_constraintVertical_weight="3"
+        app:layout_constraintTop_toBottomOf="@+id/right_panel_1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_weight="1" />
+
+    <com.github.rongi.rotate_layout.layout.RotateLayout
+        style="@style/PlayerContainer"
+        android:id="@+id/right_panel_3"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        tools:background="@color/green"
+        app:layout_constraintStart_toEndOf="@+id/guideline_half_vertical"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_panel"
+        app:layout_constraintVertical_weight="3"
+        app:layout_constraintTop_toBottomOf="@+id/right_panel_2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_weight="1" />
+
+
+    <com.github.rongi.rotate_layout.layout.RotateLayout
+        style="@style/PlayerContainer"
+        android:id="@+id/left_panel_1"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        tools:background="@color/cool_purple"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/left_panel_2"
+        app:layout_constraintVertical_weight="3"
+        app:layout_constraintTop_toBottomOf="@+id/top_panel"
+        app:layout_constraintEnd_toStartOf="@id/guideline_half_vertical"
+        app:layout_constraintHorizontal_weight="1" />
+
+    <com.github.rongi.rotate_layout.layout.RotateLayout
+        style="@style/PlayerContainer"
+        android:id="@+id/left_panel_2"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        tools:background="@color/light_red"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/left_panel_3"
+        app:layout_constraintVertical_weight="3"
+        app:layout_constraintTop_toBottomOf="@+id/left_panel_1"
+        app:layout_constraintEnd_toStartOf="@id/guideline_half_vertical"
+        app:layout_constraintHorizontal_weight="1" />
+
+    <com.github.rongi.rotate_layout.layout.RotateLayout
+        style="@style/PlayerContainer"
+        android:id="@+id/left_panel_3"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        tools:background="@color/accent_blue"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_panel"
+        app:layout_constraintVertical_weight="3"
+        app:layout_constraintTop_toBottomOf="@+id/left_panel_2"
+        app:layout_constraintEnd_toStartOf="@id/guideline_half_vertical"
+        app:layout_constraintHorizontal_weight="1" />
+
+
+</merge>

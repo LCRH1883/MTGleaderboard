@@ -1,0 +1,234 @@
+<resources>
+
+    <style name="BaseTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">?attr/scToolbarColor</item>
+        <item name="colorPrimaryDark">?attr/scStatusBarColor</item>
+        <item name="colorAccent">?attr/scAccentColor</item>
+        <item name="colorControlNormal">?attr/scTextColorPrimary</item>
+        <item name="colorControlHighlight">?attr/scRippleColor</item>
+        <item name="android:textColorPrimary">?attr/scTextColorPrimary</item>
+        <item name="toolbarStyle">@style/BaseToolbarTheme</item>
+        <item name="android:statusBarColor">?attr/scStatusBarColor</item>
+        <item name="android:windowLightStatusBar">?attr/scIsLightTheme</item>
+        <item name="android:windowBackground">?attr/scBackgroundColor</item>
+        <item name="alertDialogTheme">@style/BaseAlertDialogTheme</item>
+        <item name="toolbarNavigationButtonStyle">@style/Toolbar.Button.Navigation.Tinted</item>
+    </style>
+
+    <style name="BaseToolbarTheme" parent="Widget.AppCompat.Toolbar">
+        <item name="titleTextAppearance">@style/ToolbarTitle</item>
+        <item name="android:background">?attr/scToolbarColor</item>
+        <item name="android:elevation">4dp</item>
+    </style>
+
+    <style name="Toolbar.Button.Navigation.Tinted" parent="Widget.AppCompat.Toolbar.Button.Navigation">
+        <item name="tint">?attr/scTextColorPrimary</item>
+    </style>
+
+    <style name="BaseAlertDialogTheme" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="android:background">?attr/scBackgroundColor</item>
+        <item name="android:textColor">?attr/scTextColorPrimary</item>
+        <item name="android:textColorPrimary">?attr/scTextColorPrimary</item>
+        <item name="buttonBarPositiveButtonStyle">@style/PositiveButtonStyle</item>
+        <item name="colorAccent">?attr/scAccentColor</item>
+    </style>
+
+    <style name="PositiveButtonStyle" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:textColor">?attr/scAccentColor</item>
+    </style>
+
+    <style name="SplashTheme" parent="LightTheme"/>
+
+    <style name="LightTheme" parent="BaseTheme">
+        <item name="scIsLightTheme">true</item>
+        <item name="scToolbarColor">@color/white</item>
+        <item name="scStatusBarColor">@color/light_mode_status_bar_color</item>
+        <item name="scAccentColor">@color/accent_blue</item>
+        <item name="scAccentContrastTextColor">@color/white</item>
+        <item name="scRippleColor">@color/light_mode_ripple_color</item>
+        <item name="scCounterSelectionColor">@color/selected_yellow</item>
+        <item name="scOptionButtonColor">@android:color/transparent</item>
+        <item name="scGameButtonColor">@color/light_mode_divider_color</item>
+        <item name="scMenuEnabledButtonColor">@color/light_mode_game_button_color_enabled</item>
+        <item name="scMenuDisabledButtonColor">@color/light_mode_game_button_color_disabled</item>
+        <item name="scMenuPressedButtonColor">@color/light_mode_game_button_pressed_state_color</item>
+        <item name="scMenuButtonTextColor">@color/white</item>
+        <item name="scTextColorCaption">@color/darker_grey</item>
+        <item name="scTextColorPrimary">@color/light_mode_primary_text</item>
+        <item name="scDividerColor">@color/light_mode_divider_color</item>
+        <item name="scPlayerDividerColor">@color/light_mode_divider_color</item>
+        <item name="scBackgroundColor">@color/white</item>
+    </style>
+
+    <style name="DarkTheme" parent="BaseTheme">
+        <item name="scIsLightTheme">false</item>
+        <item name="scStatusBarColor">@color/dark_mode_black</item>
+        <item name="scToolbarColor">@color/off_black</item>
+        <item name="scAccentColor">@color/accent_blue</item>
+        <item name="scAccentContrastTextColor">@color/white</item>
+        <item name="scRippleColor">@color/dark_mode_ripple_color</item>
+        <item name="scCounterSelectionColor">@color/dark_grey</item>
+        <item name="scOptionButtonColor">@color/off_black</item>
+        <item name="scGameButtonColor">@color/off_black</item>
+        <item name="scMenuEnabledButtonColor">@color/accent_blue</item>
+        <item name="scMenuDisabledButtonColor">@color/dark_grey</item>
+        <item name="scMenuPressedButtonColor">@color/darker_grey</item>
+        <item name="scMenuButtonTextColor">@color/white</item>
+        <item name="scTextColorCaption">@color/dark_grey</item>
+        <item name="scTextColorPrimary">@color/white</item>
+        <item name="scDividerColor">@color/white</item>
+        <item name="scPlayerDividerColor">@color/white</item>
+        <item name="scBackgroundColor">@color/dark_mode_black</item>
+    </style>
+
+    <style name="MoxEmerald" parent="DarkTheme">
+        <item name="scStatusBarColor">@color/mox_emerald_dark_green</item>
+        <item name="scToolbarColor">@color/mox_emerald_green</item>
+        <item name="scAccentColor">@color/mox_emerald_light_green</item>
+        <item name="scAccentContrastTextColor">@color/dark_mode_black</item>
+        <item name="scRippleColor">@color/mox_emerald_ripple</item>
+        <item name="scCounterSelectionColor">@color/mox_emerald_light_green</item>
+        <item name="scMenuEnabledButtonColor">@color/mox_emerald_green</item>
+        <item name="scMenuDisabledButtonColor">@color/dark_grey</item>
+        <item name="scMenuPressedButtonColor">@color/darker_grey</item>
+        <item name="scMenuButtonTextColor">@color/white</item>
+        <item name="scBackgroundColor">@color/dark_mode_black</item>
+    </style>
+
+    <style name="LotusPetal" parent="DarkTheme">
+        <item name="scStatusBarColor">@color/lotus_petal_darkest</item>
+        <item name="scToolbarColor">@color/lotus_petal_primary</item>
+        <item name="scAccentColor">@color/lotus_petal_accent</item>
+        <item name="scAccentContrastTextColor">@color/dark_mode_black</item>
+        <item name="scRippleColor">@color/lotus_petal_ripple</item>
+        <item name="scCounterSelectionColor">@color/lotus_petal_accent</item>
+        <item name="scMenuEnabledButtonColor">@color/lotus_petal_primary</item>
+        <item name="scMenuDisabledButtonColor">@color/dark_grey</item>
+        <item name="scMenuPressedButtonColor">@color/darker_grey</item>
+        <item name="scMenuButtonTextColor">@color/white</item>
+        <item name="scBackgroundColor">@color/dark_mode_black</item>
+    </style>
+
+    <style name="Aetherhub" parent="DarkTheme">
+        <item name="scStatusBarColor">@color/dark_mode_black</item>
+        <item name="scToolbarColor">@color/off_black</item>
+        <item name="scAccentColor">@color/aether_hub_accent</item>
+        <item name="scAccentContrastTextColor">@color/dark_mode_black</item>
+        <item name="scRippleColor">@color/aether_hub_ripple</item>
+        <item name="scOptionButtonColor">@color/aether_hub_button_background</item>
+        <item name="scCounterSelectionColor">@color/aether_hub_accent</item>
+        <item name="scMenuEnabledButtonColor">@color/aether_hub_primary</item>
+        <item name="scMenuDisabledButtonColor">@color/dark_grey</item>
+        <item name="scMenuPressedButtonColor">@color/darker_grey</item>
+        <item name="scMenuButtonTextColor">@color/white</item>
+        <item name="scBackgroundColor">@color/dark_mode_black</item>
+    </style>
+
+    <style name="PinkTheme" parent="LightTheme">
+        <item name="scToolbarColor">@color/pink_bg</item>
+        <item name="scAccentColor">@color/pink_accent</item>
+        <item name="scAccentContrastTextColor">@color/black</item>
+        <item name="scRippleColor">@color/pink_ripple</item>
+        <item name="scCounterSelectionColor">@color/pink_accent</item>
+        <item name="scMenuEnabledButtonColor">@color/pink_accent</item>
+        <item name="scMenuDisabledButtonColor">@color/dark_grey</item>
+        <item name="scMenuPressedButtonColor">@color/darker_grey</item>
+        <item name="scMenuButtonTextColor">@color/black</item>
+        <item name="scBackgroundColor">@color/pink_bg</item>
+    </style>
+
+    <style name="Karn" parent="LightTheme">
+        <item name="scAccentColor">@color/darker_grey</item>
+        <item name="scAccentContrastTextColor">@color/black</item>
+        <item name="scRippleColor">@color/light_mode_ripple_color</item>
+        <item name="scCounterSelectionColor">@color/dark_grey</item>
+        <item name="scOptionButtonColor">@android:color/transparent</item>
+        <item name="scGameButtonColor">@color/light_mode_divider_color</item>
+        <item name="scMenuEnabledButtonColor">@color/light_mode_game_button_color_enabled</item>
+        <item name="scMenuDisabledButtonColor">@color/light_mode_game_button_color_disabled</item>
+        <item name="scMenuPressedButtonColor">@color/light_mode_game_button_pressed_state_color</item>
+        <item name="scMenuButtonTextColor">@color/white</item>
+        <item name="scTextColorCaption">@color/darker_grey</item>
+        <item name="scTextColorPrimary">@color/light_mode_primary_text</item>
+        <item name="scDividerColor">@color/light_mode_divider_color</item>
+        <item name="scPlayerDividerColor">@color/light_mode_divider_color</item>
+        <item name="scBackgroundColor">@color/white</item>
+    </style>
+
+    <style name="OptionButton" parent="@style/Widget.AppCompat.Button">
+        <item name="android:background">@drawable/option_button_bg</item>
+        <item name="android:textColor">@color/option_button_text_color</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:minWidth">60dp</item>
+        <item name="android:layout_margin">6dp</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+
+    <style name="OptionButton.Number">
+        <item name="android:textSize">18sp</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:layout_gravity">fill_horizontal</item>
+        <item name="android:layout_columnWeight">1</item>
+    </style>
+
+
+    <style name="ColorPicker">
+        <item name="highlightColor">@color/off_black</item>
+        <item name="highlightStrokeWidth">4dp</item>
+    </style>
+
+    <style name="GameButton">
+        <item name="tint">@color/game_button_color</item>
+    </style>
+
+    <style name="MenuButton">
+        <item name="android:padding">16dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:minHeight">@dimen/menu_button_height</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?attr/scMenuButtonTextColor</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:drawablePadding">8dp</item>
+        <item name="android:foreground">@drawable/menu_button_ripple</item>
+        <item name="android:background">@drawable/menu_button_bg</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+
+    <style name="MenuButton.Round">
+        <item name="android:background">@drawable/menu_button_bg_round</item>
+    </style>
+
+    <style name="PlayerContainer" />
+
+    <style name="DialogStyle" parent="Theme.AppCompat.Dialog">
+        <!-- TODO -->
+    </style>
+
+    <style name="ValueEditText">
+        <item name="android:ems">4</item>
+        <item name="android:hint">0</item>
+        <item name="android:maxEms">4</item>
+        <item name="android:imeOptions">flagNoExtractUi</item>
+        <item name="android:selectAllOnFocus">true</item>
+        <item name="android:maxLength">4</item>
+        <item name="android:inputType">number</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColorHint">?attr/scTextColorCaption</item>
+    </style>
+
+    <style name="NameEditText">
+        <item name="android:selectAllOnFocus">true</item>
+        <item name="android:imeOptions">flagNoExtractUi</item>
+        <item name="android:inputType">text</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColorHint">?attr/scTextColorCaption</item>
+    </style>
+
+    <style name="UrlEditText" parent="NameEditText">
+        <item name="android:inputType">textUri</item>
+    </style>
+</resources>

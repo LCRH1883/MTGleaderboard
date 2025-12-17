@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationIcon="@drawable/ic_back"
+        app:title="@string/settings" />
+
+    <FrameLayout
+        android:id="@+id/manage_profiles"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:foreground="?attr/selectableItemBackground"
+        android:padding="@dimen/default_padding">
+
+        <TextView
+            style="@style/NavMenuText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/manage_profiles"
+            app:drawableStartCompat="@drawable/ic_users"
+            app:drawableEndCompat="@drawable/ic_chevron_right" />
+
+    </FrameLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/nav_menu_divider_width"
+        android:background="?attr/scDividerColor" />
+
+    <FrameLayout
+        android:id="@+id/manage_counters"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:foreground="?attr/selectableItemBackground"
+        android:padding="@dimen/default_padding">
+
+        <TextView
+            style="@style/NavMenuText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/manage_counters"
+            app:drawableStartCompat="@drawable/ic_custom_counter"
+            app:drawableEndCompat="@drawable/ic_chevron_right" />
+
+    </FrameLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/nav_menu_divider_width"
+        android:background="?attr/scDividerColor" />
+
+    <FrameLayout
+        android:id="@+id/themes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:foreground="?attr/selectableItemBackground"
+        android:padding="@dimen/default_padding">
+
+        <TextView
+            style="@style/NavMenuText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/themes"
+            app:drawableStartCompat="@drawable/ic_themes"
+            app:drawableEndCompat="@drawable/ic_chevron_right" />
+
+    </FrameLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/nav_menu_divider_width"
+        android:background="?attr/scDividerColor" />
+</LinearLayout>

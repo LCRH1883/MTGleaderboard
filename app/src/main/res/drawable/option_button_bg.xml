@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="?attr/scRippleColor">
+
+    <item android:drawable="@drawable/option_button_surface" />
+
+    <item
+        android:id="@android:id/mask"
+        android:drawable="@drawable/option_button_mask" />
+
+</ripple>

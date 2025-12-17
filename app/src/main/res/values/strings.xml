@@ -1,0 +1,103 @@
+<resources>
+    <string name="app_name">MTGleaderboard</string>
+
+    <string name="no">No</string>
+    <string name="yes">Yes</string>
+    <string name="save">Save</string>
+    <string name="done">Done</string>
+
+    <!-- Setup -->
+    <string name="setup_game_title">Set up Game</string>
+    <string name="customize_table_title">Select Player Colors &amp; Profiles</string>
+    <string name="player_number_label">Players:</string>
+    <string name="starting_life_label">Starting Life:</string>
+    <string name="keep_screen_awake_label">Keep Screen Awake</string>
+    <string name="tabletop_label">Tabletop:</string>
+    <string name="customize_player">Customize Player</string>
+    <string name="customize_player_profile">Profile:</string>
+    <string name="customize_player_color">Select Color:</string>
+    <string name="customize_player_profiles_hint">Profiles can be created and edited in Settings</string>
+    <string name="customize_layout">Customize</string>
+    <string name="start_game">Start Game</string>
+    <string name="custom_life">Custom Life</string>
+    <string name="custom_life_button_label">Custom</string>
+    <string name="starting_life_total_label">Starting Life Total:</string>
+
+    <!-- Game -->
+    <string name="exit_game">Exit Game</string>
+    <string name="are_you_sure_exit">Are you sure you want to exit the game?</string>
+    <string name="reset_game">Reset Game</string>
+    <string name="are_you_sure_reset">Are you sure you want to reset the game?</string>
+    <string name="keep_screen_awake">Keep Screen Awake</string>
+    <string name="hide_navigation">Hide Navigation</string>
+
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="manage_profiles">Manage Profiles</string>
+    <string name="create_profile">Create Profile</string>
+    <string name="manage_counters">Custom Counters</string>
+    <string name="create_counter">Create Counter</string>
+    <string name="themes">Themes</string>
+
+    <!-- Themes -->
+    <string name="themes_light">Light Themes</string>
+    <string name="themes_dark">Dark Themes</string>
+    <string name="theme_light">Sky Diamond</string>
+    <string name="theme_dark">Dimir</string>
+    <string name="theme_mox_emerald">Mox Emerald</string>
+    <string name="theme_tolaria">Tolaria</string>
+    <string name="theme_lotus_petal">Lotus Petal</string>
+    <string name="theme_aetherhub">Aetherhub®</string>
+    <string name="theme_pink">Carpet of Flowers</string>
+    <string name="theme_karn">Karn</string>
+
+    <!-- Edit Profile -->
+    <string name="profile_name_label">Profile Name:</string>
+    <string name="edit_profile_life">Life Counter</string>
+    <string name="profile_edit_select_counters_header">Other Counters:</string>
+    <string name="edit_profile_title">Edit Profile</string>
+    <string name="edit_profile_save_changes_title">Unsaved Changes</string>
+    <string name="edit_profile_save_changes_message">There are unsaved changes to this profile. Discard Changes?</string>
+    <string name="edit_profile_save_changes_discard">Discard</string>
+    <string name="edit_profile_replace_existing_title">Profile Exists</string>
+    <string name="edit_profile_replace_existing_message">A profile with the name %s already exists. Would you like to replace it?</string>
+    <string name="edit_profile_replace_existing_replace">Replace</string>
+    <string name="edit_profile_replace_existing_fail_title">Profile Exists</string>
+    <string name="edit_profile_replace_existing_fail_message">The %s profile cannot be replaced. Please make edits to the existing profile instead.</string>
+
+    <!-- Edit Counter -->
+    <string name="create_counter_type_label">Counter Type</string>
+    <string name="create_counter_preview">Preview</string>
+    <string name="create_counter_type_text">Text/Emoji</string>
+    <string name="create_counter_text_hint">ABCD</string>
+    <string name="create_counter_type_image">Local Image</string>
+    <string name="create_counter_type_url">Image URL</string>
+    <string name="create_counter_name_label">Label Text/Emoji:</string>
+    <string name="create_counter_url_label">Image/GIF URL:</string>
+    <string name="create_counter_url_hint">https://</string>
+    <string name="create_counter_local_uri_label">Local Image/GIF:</string>
+    <string name="create_counter_local_uri_hint">Click To Browse</string>
+    <string name="create_counter_full_art_label">Full Art:</string>
+    <string name="create_counter_browse_button">Browse</string>
+    <string name="counter_starting_value">Starting Value:</string>
+
+    <string name="select_counter">Select Counter</string>
+    <string name="select_life_counter">Select Life Counter</string>
+
+    <!-- Player Menu -->
+    <string name="add_counter_title">Counters</string>
+    <string name="edit_counters_title">Edit Counters</string>
+    <string name="rearrange_counters">Rearrange</string>
+    <string name="rearrange_counters_title">Rearrange Counters</string>
+    <string name="select_counters">Select Counters</string>
+    <string name="roll_title">Roll</string>
+
+    <!-- Roll -->
+    <string name="roll_d20">D20</string>
+    <string name="roll_d6">D6</string>
+    <string name="roll_coin">Coin</string>
+    <string name="roll_d20_result">You rolled %d on a D20</string>
+    <string name="roll_d6_result">You rolled %d on a D6</string>
+    <string name="roll_coin_tails_result">You flipped Tails</string>
+    <string name="roll_coin_heads_result">You flipped Heads</string>
+</resources>
