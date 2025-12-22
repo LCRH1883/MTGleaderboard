@@ -41,6 +41,15 @@ class GameViewModel @Inject constructor(
     private val _hideNavigation = MutableLiveData<Boolean>()
     val hideNavigation: LiveData<Boolean> = _hideNavigation
 
+    private val _turnCount = MutableLiveData<Int>(1)
+    val turnCount: LiveData<Int> = _turnCount
+
+    private val _startingPlayerSelected = MutableLiveData<Boolean>(false)
+    val startingPlayerSelected: LiveData<Boolean> = _startingPlayerSelected
+
+    private var startingPlayerId: Int? = null
+    private var startingPlayerSelectionEnabled = false
+
     /**
      * Maps player id to an ordered list of selected counter template ids
      * Counters that are removed are replaced with null, to assist in preserving user-selected
@@ -55,6 +64,9 @@ class GameViewModel @Inject constructor(
     }
 
     private fun initializePlayers() {
+        playerMap.clear()
+        availableCountersMap.clear()
+        pendingCounterSelectionMap.clear()
         for (i in setupPlayers.indices) {
 
             val player = GamePlayerUiModel(
@@ -82,7 +94,52 @@ class GameViewModel @Inject constructor(
             playerMap[i]?.counterSelections = generateSelectionUiModelsForPlayer(i)
             playerMap[i]?.rearrangeCounters = generateRearrangeUiModelsForPlayer(i)
         }
+        applyStartingPlayerState()
         _players.value = playerMap.values.toList()
+        _startingPlayerSelected.value = startingPlayerId != null
+    }
+
+    private fun applyStartingPlayerState() {
+        val selectionActive = startingPlayerSelectionEnabled && startingPlayerId == null
+        playerMap.values.forEach { player ->
+            player.isStartingPlayer = startingPlayerId == player.model.id
+            player.isStartingPlayerSelectable = selectionActive
+        }
+    }
+
+    private fun updateStartingPlayerState() {
+        applyStartingPlayerState()
+        _players.value = playerMap.values.toList()
+        _startingPlayerSelected.value = startingPlayerId != null
+    }
+
+    fun startStartingPlayerSelection() {
+        if (startingPlayerId != null) {
+            return
+        }
+        startingPlayerSelectionEnabled = true
+        updateStartingPlayerState()
+    }
+
+    fun selectStartingPlayer(playerId: Int) {
+        if (!startingPlayerSelectionEnabled || startingPlayerId != null) {
+            return
+        }
+        startingPlayerId = playerId
+        startingPlayerSelectionEnabled = false
+        updateStartingPlayerState()
+    }
+
+    fun selectRandomStartingPlayer() {
+        if (startingPlayerId != null) {
+            return
+        }
+        val playerIds = playerMap.values.map { it.model.id }
+        if (playerIds.isNotEmpty()) {
+            startingPlayerId = playerIds.random()
+            startingPlayerSelectionEnabled = false
+            updateStartingPlayerState()
+        }
     }
 
     fun incrementPlayerLife(playerId: Int, lifeDifference: Int = 1) {
@@ -298,6 +355,9 @@ class GameViewModel @Inject constructor(
     }
 
     fun resetGame() {
+        startingPlayerId = null
+        startingPlayerSelectionEnabled = false
+        _turnCount.value = 1
         initializePlayers()
     }
 }

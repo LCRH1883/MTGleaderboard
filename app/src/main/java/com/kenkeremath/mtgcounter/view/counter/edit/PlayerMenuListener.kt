@@ -10,4 +10,5 @@ interface PlayerMenuListener {
     fun onCounterRearranged(playerId: Int, templateId: Int, oldPosition: Int, newPosition: Int)
     fun onCancelCounterChanges(playerId: Int)
     fun onConfirmCounterChanges(playerId: Int)
+    fun onStartingPlayerSelected(playerId: Int)
 }

@@ -3,6 +3,7 @@
     <!-- Common Components -->
     <dimen name="menu_button_margin">16dp</dimen>
     <dimen name="menu_button_height">120dp</dimen>
+    <dimen name="menu_button_small_height">80dp</dimen>
 
     <!-- Setup -->
     <dimen name="setup_tabletop_layout_button_width">100dp</dimen>
@@ -39,9 +40,11 @@
     <dimen name="player_options_panel_width">80dp</dimen>
     <dimen name="player_life_width">150dp</dimen>
     <dimen name="player_list_item_height">240dp</dimen>
+    <dimen name="player_selected_glow_width">7.5dp</dimen>
 
     <!-- Counters -->
     <dimen name="min_counter_width">100dp</dimen>
+    <dimen name="counter_incrementer_text_size">36sp</dimen>
 
     <!-- Edit Counter Template -->
 

@@ -312,6 +312,18 @@
             android:layout_marginTop="@dimen/player_divider_width"
             android:layout_marginEnd="@dimen/player_divider_width" />
 
+        <View
+            android:id="@+id/player_selected_glow"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_margin="@dimen/player_divider_width"
+            android:background="@drawable/player_selected_glow"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <com.kenkeremath.mtgcounter.view.LockableRecyclerView
             android:id="@+id/counters_recycler"
             android:layout_width="0dp"
@@ -356,6 +368,19 @@
                 android:padding="8dp"
                 android:src="@drawable/ic_dice" />
         </LinearLayout>
+
+        <View
+            android:id="@+id/player_select_overlay"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@android:color/transparent"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

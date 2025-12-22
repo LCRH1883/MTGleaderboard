@@ -32,6 +32,8 @@ class GameOptionsDialogFragment : DialogFragment(), CompoundButton.OnCheckedChan
 
     private lateinit var title: TextView
     private lateinit var closeButton: View
+    private lateinit var selectPlayerButton: View
+    private lateinit var randomPlayerButton: View
     private lateinit var resetButton: View
     private lateinit var exitButton: View
     private lateinit var keepScreenAwakeCheckbox: CheckBox
@@ -67,6 +69,16 @@ class GameOptionsDialogFragment : DialogFragment(), CompoundButton.OnCheckedChan
 
         closeButton = view.findViewById(R.id.close_button)
         closeButton.setOnClickListener {
+            dismiss()
+        }
+        selectPlayerButton = view.findViewById(R.id.select_player_button)
+        selectPlayerButton.setOnClickListener {
+            viewModel.startStartingPlayerSelection()
+            dismiss()
+        }
+        randomPlayerButton = view.findViewById(R.id.random_player_button)
+        randomPlayerButton.setOnClickListener {
+            viewModel.selectRandomStartingPlayer()
             dismiss()
         }
         resetButton = view.findViewById(R.id.reset_game_button)
@@ -106,6 +118,15 @@ class GameOptionsDialogFragment : DialogFragment(), CompoundButton.OnCheckedChan
                 }
                 hideNavigationCheckbox.setOnCheckedChangeListener(this)
             }
+        }
+
+        viewModel.startingPlayerSelected.observe(viewLifecycleOwner) { selected ->
+            val enabled = selected != true
+            val alpha = if (enabled) 1f else 0.4f
+            selectPlayerButton.isEnabled = enabled
+            randomPlayerButton.isEnabled = enabled
+            selectPlayerButton.alpha = alpha
+            randomPlayerButton.alpha = alpha
         }
     }
 

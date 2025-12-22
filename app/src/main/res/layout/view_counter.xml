@@ -5,6 +5,20 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/counter_left_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.3333" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/counter_right_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.6667" />
+
     <ImageView
         android:id="@+id/background_image"
         android:layout_width="0dp"
@@ -20,11 +34,12 @@
         style="@style/CounterText"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_margin="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/counter_right_guideline"
         app:layout_constraintHeight_percent=".5"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toStartOf="@id/counter_left_guideline"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="1234" />
 
@@ -43,19 +58,59 @@
 
     <com.kenkeremath.mtgcounter.view.HoldableButton
         android:id="@+id/increment_button"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="?attr/selectableItemBackground"
+        app:layout_constraintEnd_toStartOf="@id/counter_left_guideline"
         app:layout_constraintHeight_percent=".5"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <com.kenkeremath.mtgcounter.view.HoldableButton
         android:id="@+id/decrement_button"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="?attr/selectableItemBackground"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHeight_percent=".5" />
+        app:layout_constraintEnd_toStartOf="@id/counter_left_guideline"
+        app:layout_constraintHeight_percent=".5"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/increment_label"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clickable="false"
+        android:focusable="false"
+        android:gravity="center"
+        android:importantForAccessibility="no"
+        android:includeFontPadding="false"
+        android:text="+"
+        android:textColor="?attr/scTextColorPrimary"
+        android:textSize="@dimen/counter_incrementer_text_size"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/increment_button"
+        app:layout_constraintEnd_toEndOf="@id/increment_button"
+        app:layout_constraintStart_toStartOf="@id/increment_button"
+        app:layout_constraintTop_toTopOf="@id/increment_button" />
+
+    <TextView
+        android:id="@+id/decrement_label"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clickable="false"
+        android:focusable="false"
+        android:gravity="center"
+        android:importantForAccessibility="no"
+        android:includeFontPadding="false"
+        android:text="-"
+        android:textColor="?attr/scTextColorPrimary"
+        android:textSize="@dimen/counter_incrementer_text_size"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/decrement_button"
+        app:layout_constraintEnd_toEndOf="@id/decrement_button"
+        app:layout_constraintStart_toStartOf="@id/decrement_button"
+        app:layout_constraintTop_toTopOf="@id/decrement_button" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

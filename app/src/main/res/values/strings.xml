@@ -28,6 +28,8 @@
     <string name="are_you_sure_exit">Are you sure you want to exit the game?</string>
     <string name="reset_game">Reset Game</string>
     <string name="are_you_sure_reset">Are you sure you want to reset the game?</string>
+    <string name="select_player">Select Player</string>
+    <string name="random_player">Random Player</string>
     <string name="keep_screen_awake">Keep Screen Awake</string>
     <string name="hide_navigation">Hide Navigation</string>
 

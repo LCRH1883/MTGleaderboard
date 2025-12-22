@@ -402,6 +402,10 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         viewModel.confirmCounterChanges(playerId)
     }
 
+    override fun onStartingPlayerSelected(playerId: Int) {
+        viewModel.selectStartingPlayer(playerId)
+    }
+
     override fun onOpenExitPrompt() {
         openExitPrompt()
     }

@@ -42,21 +42,47 @@
     </LinearLayout>
 
     <Button
-        android:id="@+id/reset_game_button"
+        android:id="@+id/select_player_button"
         style="@style/MenuButton.Round"
         android:layout_width="match_parent"
         android:layout_height="@dimen/menu_button_height"
         android:layout_marginHorizontal="@dimen/default_padding"
-        android:text="@string/reset_game" />
+        android:text="@string/select_player" />
 
     <Button
-        android:id="@+id/exit_game_button"
+        android:id="@+id/random_player_button"
         style="@style/MenuButton.Round"
         android:layout_width="match_parent"
         android:layout_height="@dimen/menu_button_height"
         android:layout_marginHorizontal="@dimen/default_padding"
+        android:layout_marginTop="@dimen/default_padding_half"
+        android:text="@string/random_player" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/default_padding"
         android:layout_marginTop="@dimen/default_padding"
-        android:text="@string/exit_game" />
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/reset_game_button"
+            style="@style/MenuButton.Round"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/menu_button_small_height"
+            android:layout_marginEnd="@dimen/default_padding_half"
+            android:layout_weight="1"
+            android:text="@string/reset_game" />
+
+        <Button
+            android:id="@+id/exit_game_button"
+            style="@style/MenuButton.Round"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/menu_button_small_height"
+            android:layout_weight="1"
+            android:text="@string/exit_game" />
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="wrap_content"

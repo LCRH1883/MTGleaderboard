@@ -3,6 +3,8 @@ package com.kenkeremath.mtgcounter.view.player
 import android.content.res.ColorStateList
 import android.view.View
 import android.view.ViewTreeObserver
+import android.view.animation.AnimationUtils
+import android.graphics.drawable.GradientDrawable
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,6 +39,8 @@ class PlayerViewHolder(
     private val binding = ItemPlayerTabletopBinding.bind(itemView)
 
     private var playerId: Int = -1
+    private val selectionGlow = binding.playerSelectedGlow
+    private val selectionOverlay = binding.playerSelectOverlay
 
     private val countersAdapter = CountersRecyclerAdapter(onPlayerUpdatedListener)
     private val editCountersRecyclerAdapter = EditCountersRecyclerAdapter(playerMenuListener)
@@ -369,6 +373,34 @@ class PlayerViewHolder(
         binding.revealedRearrangeCountersButton.isEnabled = data.rearrangeButtonEnabled
         binding.revealedRearrangeCountersLabel.isEnabled = data.rearrangeButtonEnabled
         binding.revealedRearrangeCountersIcon.isEnabled = data.rearrangeButtonEnabled
+
+        if (data.isStartingPlayer) {
+            val glowDrawable = selectionGlow.background?.mutate()
+            if (glowDrawable is GradientDrawable) {
+                val strokeWidth =
+                    itemView.resources.getDimensionPixelSize(R.dimen.player_selected_glow_width)
+                glowDrawable.setStroke(strokeWidth, color)
+            }
+            if (selectionGlow.visibility != View.VISIBLE) {
+                selectionGlow.visibility = View.VISIBLE
+                val glowAnimation =
+                    AnimationUtils.loadAnimation(itemView.context, R.anim.player_glow_pulse)
+                selectionGlow.startAnimation(glowAnimation)
+            }
+        } else {
+            selectionGlow.clearAnimation()
+            selectionGlow.visibility = View.GONE
+        }
+
+        if (data.isStartingPlayerSelectable) {
+            selectionOverlay.visibility = View.VISIBLE
+            selectionOverlay.setOnClickListener {
+                playerMenuListener.onStartingPlayerSelected(playerId)
+            }
+        } else {
+            selectionOverlay.visibility = View.GONE
+            selectionOverlay.setOnClickListener(null)
+        }
 
         //Scroll to end if there's a new counter, and set ui model flag to false
         if (data.newCounterAdded) {
