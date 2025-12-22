@@ -61,6 +61,8 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
 
     private val viewModel: GameViewModel by viewModels()
     private var currentPlayers: List<GamePlayerUiModel> = emptyList()
+    private var menuButtonContainer: FrameLayout? = null
+    private var menuButtonIcon: ImageView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -116,8 +118,8 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         viewModel.players.observe(this) {
             renderPlayers(it)
         }
-        viewModel.playerRotationClockwise.observe(this) {
-            renderPlayers(currentPlayers)
+        viewModel.currentTurnPlayerId.observe(this) {
+            updateMenuButtonRotation()
         }
 
         viewModel.keepScreenOn.observe(this) {
@@ -131,10 +133,9 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
 
     private fun renderPlayers(players: List<GamePlayerUiModel>) {
         currentPlayers = players
-        val rotationClockwise = viewModel.playerRotationClockwise.value != false
-        val orderedPlayers = if (rotationClockwise) players else players.reversed()
-        tabletopLayoutAdapter.updateAll(viewModel.tabletopType, orderedPlayers)
-        playersRecyclerAdapter.setData(orderedPlayers)
+        tabletopLayoutAdapter.updateAll(viewModel.tabletopType, currentPlayers)
+        playersRecyclerAdapter.setData(currentPlayers)
+        updateMenuButtonRotation()
     }
 
     private fun addMenuButton() {
@@ -150,7 +151,7 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                     containerSize,
                 )
                 val menuButton = ImageView(this@GameActivity)
-                menuButton.setImageResource(R.mipmap.ic_launcher)
+                menuButton.setImageResource(R.drawable.ic_skull)
                 container.addView(
                     menuButton, FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.MATCH_PARENT,
@@ -280,9 +281,41 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 container.setOnClickListener {
                     openGameMenu()
                 }
+                menuButtonContainer = container
+                menuButtonIcon = menuButton
+                updateMenuButtonRotation()
                 return false
             }
         })
+    }
+
+    private fun updateMenuButtonRotation() {
+        val icon = menuButtonIcon ?: return
+        if (viewModel.tabletopType == TabletopType.LIST) {
+            icon.rotation = 0f
+            return
+        }
+        val currentTurnId = viewModel.currentTurnPlayerId.value ?: run {
+            icon.rotation = 0f
+            return
+        }
+        var targetRotation: Float? = null
+        for (panel in tabletopLayout.panels.values) {
+            if (panel.childCount == 0) {
+                continue
+            }
+            val childTag = panel.getChildAt(0).tag as? Int ?: continue
+            if (childTag == currentTurnId) {
+                targetRotation = panel.angle.toFloat()
+                break
+            }
+        }
+        if (targetRotation == null) {
+            icon.rotation = 0f
+            return
+        }
+        val containerRotation = menuButtonContainer?.rotation ?: 0f
+        icon.rotation = targetRotation - containerRotation + 180f
     }
 
     private fun openGameMenu() {
@@ -297,7 +330,7 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
             //Refresh layouts for new screen size
             playersRecyclerAdapter.invalidateMeasurement()
             viewModel.players.value?.let {
-                tabletopLayoutAdapter.updateAll(viewModel.tabletopType, it)
+                renderPlayers(it)
             }
         }
     }
@@ -415,6 +448,10 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
 
     override fun onStartingPlayerSelected(playerId: Int) {
         viewModel.selectStartingPlayer(playerId)
+    }
+
+    override fun onEndTurn(playerId: Int) {
+        viewModel.endTurn(playerId)
     }
 
     override fun onOpenExitPrompt() {

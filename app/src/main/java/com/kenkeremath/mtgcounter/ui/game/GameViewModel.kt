@@ -10,6 +10,7 @@ import com.kenkeremath.mtgcounter.model.player.PlayerSetupModel
 import com.kenkeremath.mtgcounter.persistence.GameRepository
 import com.kenkeremath.mtgcounter.view.counter.edit.CounterSelectionUiModel
 import com.kenkeremath.mtgcounter.view.counter.edit.RearrangeCounterUiModel
+import com.kenkeremath.mtgcounter.view.TableLayoutPosition
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.lang.IllegalArgumentException
 import javax.inject.Inject
@@ -47,11 +48,25 @@ class GameViewModel @Inject constructor(
     private val _playerRotationClockwise = MutableLiveData<Boolean>(true)
     val playerRotationClockwise: LiveData<Boolean> = _playerRotationClockwise
 
+    private val _currentTurnPlayerId = MutableLiveData<Int?>(null)
+    val currentTurnPlayerId: LiveData<Int?> = _currentTurnPlayerId
+
     private val _startingPlayerSelected = MutableLiveData<Boolean>(false)
     val startingPlayerSelected: LiveData<Boolean> = _startingPlayerSelected
 
     private var startingPlayerId: Int? = null
     private var startingPlayerSelectionEnabled = false
+    private val playerOrderIds = setupPlayers.map { it.id }
+    private val clockwiseTurnPositions = listOf(
+        TableLayoutPosition.TOP_PANEL,
+        TableLayoutPosition.RIGHT_PANEL_1,
+        TableLayoutPosition.RIGHT_PANEL_2,
+        TableLayoutPosition.RIGHT_PANEL_3,
+        TableLayoutPosition.BOTTOM_PANEL,
+        TableLayoutPosition.LEFT_PANEL_3,
+        TableLayoutPosition.LEFT_PANEL_2,
+        TableLayoutPosition.LEFT_PANEL_1,
+    )
 
     /**
      * Maps player id to an ordered list of selected counter template ids
@@ -98,6 +113,7 @@ class GameViewModel @Inject constructor(
             playerMap[i]?.rearrangeCounters = generateRearrangeUiModelsForPlayer(i)
         }
         applyStartingPlayerState()
+        applyCurrentTurnState()
         _players.value = playerMap.values.toList()
         _startingPlayerSelected.value = startingPlayerId != null
     }
@@ -110,8 +126,16 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    private fun updateStartingPlayerState() {
+    private fun applyCurrentTurnState() {
+        val currentId = _currentTurnPlayerId.value
+        playerMap.values.forEach { player ->
+            player.isCurrentTurnPlayer = player.model.id == currentId
+        }
+    }
+
+    private fun updatePlayerState() {
         applyStartingPlayerState()
+        applyCurrentTurnState()
         _players.value = playerMap.values.toList()
         _startingPlayerSelected.value = startingPlayerId != null
     }
@@ -121,7 +145,7 @@ class GameViewModel @Inject constructor(
             return
         }
         startingPlayerSelectionEnabled = true
-        updateStartingPlayerState()
+        updatePlayerState()
     }
 
     fun selectStartingPlayer(playerId: Int) {
@@ -130,7 +154,8 @@ class GameViewModel @Inject constructor(
         }
         startingPlayerId = playerId
         startingPlayerSelectionEnabled = false
-        updateStartingPlayerState()
+        _currentTurnPlayerId.value = playerId
+        updatePlayerState()
     }
 
     fun selectRandomStartingPlayer() {
@@ -141,7 +166,8 @@ class GameViewModel @Inject constructor(
         if (playerIds.isNotEmpty()) {
             startingPlayerId = playerIds.random()
             startingPlayerSelectionEnabled = false
-            updateStartingPlayerState()
+            _currentTurnPlayerId.value = startingPlayerId
+            updatePlayerState()
         }
     }
 
@@ -359,11 +385,54 @@ class GameViewModel @Inject constructor(
 
     fun setPlayerRotationClockwise(clockwise: Boolean) {
         _playerRotationClockwise.value = clockwise
+        updatePlayerState()
+    }
+
+    fun endTurn(playerId: Int) {
+        val currentId = _currentTurnPlayerId.value ?: return
+        if (currentId != playerId) {
+            return
+        }
+        val order = getTurnOrderIds()
+        val currentIndex = order.indexOf(currentId)
+        if (currentIndex == -1 || order.isEmpty()) {
+            return
+        }
+        val nextIndex = (currentIndex + 1) % order.size
+        _currentTurnPlayerId.value = order[nextIndex]
+        _turnCount.value = (_turnCount.value ?: 1) + 1
+        updatePlayerState()
+    }
+
+    private fun getTurnOrderIds(): List<Int> {
+        val clockwise = _playerRotationClockwise.value != false
+        val baseOrder = playerOrderIds
+        if (tabletopType == TabletopType.LIST || tabletopType == TabletopType.NONE) {
+            return if (clockwise) baseOrder else baseOrder.reversed()
+        }
+        val positions = tabletopType.positions
+        if (positions.isEmpty()) {
+            return if (clockwise) baseOrder else baseOrder.reversed()
+        }
+        if (positions.contains(TableLayoutPosition.SOLO_PANEL)) {
+            return baseOrder.take(1)
+        }
+        val positionToPlayer = mutableMapOf<TableLayoutPosition, Int>()
+        for (i in positions.indices) {
+            if (i < baseOrder.size) {
+                positionToPlayer[positions[i]] = baseOrder[i]
+            }
+        }
+        val orderedPlayers = clockwiseTurnPositions
+            .filter { positionToPlayer.containsKey(it) }
+            .mapNotNull { positionToPlayer[it] }
+        return if (clockwise) orderedPlayers else orderedPlayers.reversed()
     }
 
     fun resetGame() {
         startingPlayerId = null
         startingPlayerSelectionEnabled = false
+        _currentTurnPlayerId.value = null
         _turnCount.value = 1
         initializePlayers()
     }

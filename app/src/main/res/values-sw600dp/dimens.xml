@@ -41,6 +41,7 @@
     <dimen name="player_life_width">150dp</dimen>
     <dimen name="player_list_item_height">240dp</dimen>
     <dimen name="player_selected_glow_width">7.5dp</dimen>
+    <dimen name="end_turn_button_height">40dp</dimen>
 
     <!-- Counters -->
     <dimen name="min_counter_width">100dp</dimen>

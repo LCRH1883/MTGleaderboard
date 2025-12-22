@@ -41,6 +41,7 @@ class PlayerViewHolder(
     private var playerId: Int = -1
     private val selectionGlow = binding.playerSelectedGlow
     private val selectionOverlay = binding.playerSelectOverlay
+    private val endTurnButton = binding.endTurnButton
 
     private val countersAdapter = CountersRecyclerAdapter(onPlayerUpdatedListener)
     private val editCountersRecyclerAdapter = EditCountersRecyclerAdapter(playerMenuListener)
@@ -86,6 +87,9 @@ class PlayerViewHolder(
         }
         binding.roll.setOnClickListener {
             playerMenuListener.onRollOpened(playerId)
+        }
+        endTurnButton.setOnClickListener {
+            playerMenuListener.onEndTurn(playerId)
         }
         binding.rollComposeView.setContent {
             ComposeTheme.ScComposeTheme {
@@ -157,6 +161,7 @@ class PlayerViewHolder(
 
     fun bind(data: GamePlayerUiModel) {
         playerId = data.model.id
+        itemView.tag = playerId
         countersAdapter.setData(data.model)
 
         val color = ContextCompat.getColor(
@@ -374,7 +379,7 @@ class PlayerViewHolder(
         binding.revealedRearrangeCountersLabel.isEnabled = data.rearrangeButtonEnabled
         binding.revealedRearrangeCountersIcon.isEnabled = data.rearrangeButtonEnabled
 
-        if (data.isStartingPlayer) {
+        if (data.isCurrentTurnPlayer) {
             val glowDrawable = selectionGlow.background?.mutate()
             if (glowDrawable is GradientDrawable) {
                 val strokeWidth =
@@ -401,6 +406,9 @@ class PlayerViewHolder(
             selectionOverlay.visibility = View.GONE
             selectionOverlay.setOnClickListener(null)
         }
+
+        endTurnButton.isEnabled = data.isCurrentTurnPlayer
+        endTurnButton.alpha = if (data.isCurrentTurnPlayer) 1f else 0.4f
 
         //Scroll to end if there's a new counter, and set ui model flag to false
         if (data.newCounterAdded) {

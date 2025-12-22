@@ -66,6 +66,7 @@
     <dimen name="player_life_width">130dp</dimen>
     <dimen name="player_list_item_height">200dp</dimen>
     <dimen name="player_selected_glow_width">5dp</dimen>
+    <dimen name="end_turn_button_height">32dp</dimen>
     <!-- If the player list would not exceed this value in height beyond the view,
     then cells are sized to fit without scrolling. This may cause player cells to be
     a few pixels smaller than they normally would -->

@@ -3,7 +3,7 @@
 
     <item>
         <shape android:shape="oval">
-            <solid android:color="?attr/scGameButtonColor"/>
+            <solid android:color="@color/game_menu_button_bg"/>
         </shape>
     </item>
 

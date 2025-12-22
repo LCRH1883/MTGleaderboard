@@ -14,6 +14,7 @@ data class GamePlayerUiModel(
     var rearrangeButtonEnabled: Boolean = false,
     var isStartingPlayer: Boolean = false,
     var isStartingPlayerSelectable: Boolean = false,
+    var isCurrentTurnPlayer: Boolean = false,
 ) {
     enum class Menu {
         MAIN,

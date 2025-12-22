@@ -3,5 +3,5 @@
     <item
         android:width="32dp"
         android:height="32dp"
-        android:drawable="@mipmap/ic_launcher" />
+        android:drawable="@drawable/ic_skull" />
 </layer-list>

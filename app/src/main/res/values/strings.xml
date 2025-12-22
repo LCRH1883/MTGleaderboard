@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MTGleaderboard</string>
+    <string name="app_name">MTG Leader Board</string>
 
     <string name="no">No</string>
     <string name="yes">Yes</string>
@@ -34,6 +34,7 @@
     <string name="player_rotation">Player Rotation</string>
     <string name="clockwise">Clockwise</string>
     <string name="counter_clockwise">Counterclockwise</string>
+    <string name="end_turn">End Turn</string>
     <string name="keep_screen_awake">Keep Screen Awake</string>
     <string name="hide_navigation">Hide Navigation</string>
 
