@@ -1,6 +1,6 @@
-# MTGleaderboard
+# MTG Leader Board
 
-MTGleaderboard is a free, open source Magic: The Gathering life and counter tracking app
+MTG Leader Board is a free, open source Magic: The Gathering life and counter tracking app
 
 # Features
 
@@ -11,6 +11,10 @@ MTGleaderboard is a free, open source Magic: The Gathering life and counter trac
 * Create custom profiles for players or decks
 * Dark Mode support and a number of custom themes
 * Dice rolling from within a game
+
+# Versioning
+
+See `docs/versioning.md` for the version name/number format and current version.
 
 # Play Store Listing
 
