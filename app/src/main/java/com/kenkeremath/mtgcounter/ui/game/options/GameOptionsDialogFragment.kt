@@ -5,8 +5,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
-import android.widget.CompoundButton
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
@@ -18,8 +16,10 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class GameOptionsDialogFragment : DialogFragment(), CompoundButton.OnCheckedChangeListener {
+class GameOptionsDialogFragment : DialogFragment() {
     companion object {
+        private const val TAG_GAME_SETTINGS = "tag_game_settings"
+
         fun newInstance(): GameOptionsDialogFragment {
             val f = GameOptionsDialogFragment()
             f.arguments = Bundle()
@@ -32,10 +32,11 @@ class GameOptionsDialogFragment : DialogFragment(), CompoundButton.OnCheckedChan
 
     private lateinit var title: TextView
     private lateinit var closeButton: View
+    private lateinit var optionsButton: View
+    private lateinit var selectPlayerButton: View
+    private lateinit var randomPlayerButton: View
     private lateinit var resetButton: View
     private lateinit var exitButton: View
-    private lateinit var keepScreenAwakeCheckbox: CheckBox
-    private lateinit var hideNavigationCheckbox: CheckBox
 
     @Inject
     lateinit var datastore: Datastore
@@ -69,6 +70,22 @@ class GameOptionsDialogFragment : DialogFragment(), CompoundButton.OnCheckedChan
         closeButton.setOnClickListener {
             dismiss()
         }
+        optionsButton = view.findViewById(R.id.options_button)
+        optionsButton.setOnClickListener {
+            dismiss()
+            GameSettingsDialogFragment.newInstance()
+                .show(parentFragmentManager, TAG_GAME_SETTINGS)
+        }
+        selectPlayerButton = view.findViewById(R.id.select_player_button)
+        selectPlayerButton.setOnClickListener {
+            viewModel.startStartingPlayerSelection()
+            dismiss()
+        }
+        randomPlayerButton = view.findViewById(R.id.random_player_button)
+        randomPlayerButton.setOnClickListener {
+            viewModel.selectRandomStartingPlayer()
+            dismiss()
+        }
         resetButton = view.findViewById(R.id.reset_game_button)
         resetButton.setOnClickListener {
             listener?.onOpenResetPrompt()
@@ -78,42 +95,13 @@ class GameOptionsDialogFragment : DialogFragment(), CompoundButton.OnCheckedChan
             listener?.onOpenExitPrompt()
         }
 
-        keepScreenAwakeCheckbox = view.findViewById(R.id.keep_screen_awake_checkbox)
-        keepScreenAwakeCheckbox.setOnCheckedChangeListener(this)
-
-        hideNavigationCheckbox = view.findViewById(R.id.hide_navigation_checkbox)
-        hideNavigationCheckbox.setOnCheckedChangeListener(this)
-
-        viewModel.keepScreenOn.observe(viewLifecycleOwner) {
-            it?.let {
-
-                //Remove listener to avoid infinite loop
-                keepScreenAwakeCheckbox.setOnCheckedChangeListener(null)
-                if (keepScreenAwakeCheckbox.isChecked != it) {
-                    keepScreenAwakeCheckbox.isChecked = it
-                }
-                keepScreenAwakeCheckbox.setOnCheckedChangeListener(this)
-            }
-        }
-
-        viewModel.hideNavigation.observe(viewLifecycleOwner) {
-            it?.let {
-
-                //Remove listener to avoid infinite loop
-                hideNavigationCheckbox.setOnCheckedChangeListener(null)
-                if (hideNavigationCheckbox.isChecked != it) {
-                    hideNavigationCheckbox.isChecked = it
-                }
-                hideNavigationCheckbox.setOnCheckedChangeListener(this)
-            }
-        }
-    }
-
-    override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
-        if (buttonView == keepScreenAwakeCheckbox) {
-            viewModel.setKeepScreenOn(isChecked)
-        } else if (buttonView == hideNavigationCheckbox) {
-            viewModel.setHideNavigation(isChecked)
+        viewModel.startingPlayerSelected.observe(viewLifecycleOwner) { selected ->
+            val enabled = selected != true
+            val alpha = if (enabled) 1f else 0.4f
+            selectPlayerButton.isEnabled = enabled
+            randomPlayerButton.isEnabled = enabled
+            selectPlayerButton.alpha = alpha
+            randomPlayerButton.alpha = alpha
         }
     }
 

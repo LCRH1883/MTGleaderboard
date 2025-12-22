@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/scBackgroundColor"
+    android:gravity="center_horizontal"
+    android:minWidth="@dimen/dialog_width"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/default_padding">
+
+    <ImageView
+        android:id="@+id/close_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start"
+        android:foreground="?attr/selectableItemBackground"
+        android:padding="16dp"
+        android:src="@drawable/ic_close"
+        app:tint="?attr/scTextColorPrimary" />
+
+    <TextView
+        android:id="@+id/title"
+        style="@style/Header1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/default_padding"
+        android:text="@string/options" />
+
+    <LinearLayout
+        android:id="@+id/player_rotation_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/default_padding"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/player_rotation_label"
+            style="@style/Header3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/player_rotation"
+            android:textColor="?attr/scTextColorPrimary" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/player_rotation_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/clockwise"
+            android:textColor="?attr/scTextColorPrimary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/turn_timer_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/default_padding"
+        android:layout_marginTop="@dimen/default_padding"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/turn_timer_label"
+            style="@style/Header3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/turn_timer"
+            android:textColor="?attr/scTextColorPrimary" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/turn_timer_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/turn_timer_on"
+            android:textColor="?attr/scTextColorPrimary" />
+
+        <LinearLayout
+            android:id="@+id/turn_timer_input_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/default_padding_half"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/turn_timer_minutes_input"
+                style="@style/ValueEditText"
+                android:layout_width="@dimen/turn_timer_input_width"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:inputType="number"
+                android:maxLength="2"
+                android:textColor="?attr/scTextColorPrimary" />
+
+            <TextView
+                android:id="@+id/turn_timer_colon"
+                style="@style/Header3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/default_padding_quarter"
+                android:text=":"
+                android:textColor="?attr/scTextColorPrimary" />
+
+            <EditText
+                android:id="@+id/turn_timer_seconds_input"
+                style="@style/ValueEditText"
+                android:layout_width="@dimen/turn_timer_input_width"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:inputType="number"
+                android:maxLength="2"
+                android:textColor="?attr/scTextColorPrimary" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/keep_screen_awake_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/default_padding"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/setup_padding_horizontal">
+
+        <CheckBox
+            android:id="@+id/keep_screen_awake_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            style="@style/Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/keep_screen_awake" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/hide_navigation_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/setup_padding_horizontal">
+
+        <CheckBox
+            android:id="@+id/hide_navigation_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            style="@style/Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/hide_navigation" />
+    </LinearLayout>
+
+</LinearLayout>

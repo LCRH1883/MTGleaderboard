@@ -60,7 +60,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@mipmap/ic_launcher"
+            app:navigationIcon="@drawable/ic_skull"
             app:title="@string/app_name" />
 
         <FrameLayout

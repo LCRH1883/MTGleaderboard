@@ -1,8 +1,14 @@
 package com.kenkeremath.mtgcounter.view.player
 
 import android.content.res.ColorStateList
+import android.graphics.drawable.GradientDrawable
+import android.os.Handler
+import android.os.Looper
+import android.view.HapticFeedbackConstants
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewTreeObserver
+import android.view.animation.AnimationUtils
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,6 +43,13 @@ class PlayerViewHolder(
     private val binding = ItemPlayerTabletopBinding.bind(itemView)
 
     private var playerId: Int = -1
+    private var isCurrentTurnPlayer = false
+    private val selectionGlow = binding.playerSelectedGlow
+    private val selectionOverlay = binding.playerSelectOverlay
+    private val endTurnButton = binding.endTurnButton
+    private val endTurnHandler = Handler(Looper.getMainLooper())
+    private val endTurnLongPressTimeoutMs = 2000L
+    private var endTurnLongPressTriggered = false
 
     private val countersAdapter = CountersRecyclerAdapter(onPlayerUpdatedListener)
     private val editCountersRecyclerAdapter = EditCountersRecyclerAdapter(playerMenuListener)
@@ -82,6 +95,52 @@ class PlayerViewHolder(
         }
         binding.roll.setOnClickListener {
             playerMenuListener.onRollOpened(playerId)
+        }
+        endTurnButton.setOnClickListener {
+            playerMenuListener.onEndTurn(playerId)
+        }
+        endTurnButton.isLongClickable = false
+        endTurnButton.setOnTouchListener { view, event ->
+            if (!isCurrentTurnPlayer || !view.isEnabled) {
+                return@setOnTouchListener true
+            }
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    endTurnLongPressTriggered = false
+                    view.isPressed = true
+                    endTurnHandler.postDelayed({
+                        endTurnLongPressTriggered = true
+                        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                        playerMenuListener.onEndTurnUndoRequested(playerId)
+                    }, endTurnLongPressTimeoutMs)
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val outOfBounds = event.x < 0f ||
+                        event.x > view.width ||
+                        event.y < 0f ||
+                        event.y > view.height
+                    if (outOfBounds) {
+                        view.isPressed = false
+                        endTurnHandler.removeCallbacksAndMessages(null)
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    view.isPressed = false
+                    endTurnHandler.removeCallbacksAndMessages(null)
+                    if (!endTurnLongPressTriggered) {
+                        view.performClick()
+                    }
+                    true
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    view.isPressed = false
+                    endTurnHandler.removeCallbacksAndMessages(null)
+                    true
+                }
+                else -> false
+            }
         }
         binding.rollComposeView.setContent {
             ComposeTheme.ScComposeTheme {
@@ -152,7 +211,11 @@ class PlayerViewHolder(
     }
 
     fun bind(data: GamePlayerUiModel) {
+        endTurnHandler.removeCallbacksAndMessages(null)
+        endTurnLongPressTriggered = false
+        isCurrentTurnPlayer = data.isCurrentTurnPlayer
         playerId = data.model.id
+        itemView.tag = playerId
         countersAdapter.setData(data.model)
 
         val color = ContextCompat.getColor(
@@ -369,6 +432,37 @@ class PlayerViewHolder(
         binding.revealedRearrangeCountersButton.isEnabled = data.rearrangeButtonEnabled
         binding.revealedRearrangeCountersLabel.isEnabled = data.rearrangeButtonEnabled
         binding.revealedRearrangeCountersIcon.isEnabled = data.rearrangeButtonEnabled
+
+        if (data.isCurrentTurnPlayer) {
+            val glowDrawable = selectionGlow.background?.mutate()
+            if (glowDrawable is GradientDrawable) {
+                val strokeWidth =
+                    itemView.resources.getDimensionPixelSize(R.dimen.player_selected_glow_width)
+                glowDrawable.setStroke(strokeWidth, color)
+            }
+            if (selectionGlow.visibility != View.VISIBLE) {
+                selectionGlow.visibility = View.VISIBLE
+                val glowAnimation =
+                    AnimationUtils.loadAnimation(itemView.context, R.anim.player_glow_pulse)
+                selectionGlow.startAnimation(glowAnimation)
+            }
+        } else {
+            selectionGlow.clearAnimation()
+            selectionGlow.visibility = View.GONE
+        }
+
+        if (data.isStartingPlayerSelectable) {
+            selectionOverlay.visibility = View.VISIBLE
+            selectionOverlay.setOnClickListener {
+                playerMenuListener.onStartingPlayerSelected(playerId)
+            }
+        } else {
+            selectionOverlay.visibility = View.GONE
+            selectionOverlay.setOnClickListener(null)
+        }
+
+        endTurnButton.isEnabled = data.isCurrentTurnPlayer
+        endTurnButton.alpha = if (data.isCurrentTurnPlayer) 1f else 0.4f
 
         //Scroll to end if there's a new counter, and set ui model flag to false
         if (data.newCounterAdded) {

@@ -6,6 +6,7 @@
     <!-- Common Components -->
     <dimen name="menu_button_margin">8dp</dimen>
     <dimen name="menu_button_height">80dp</dimen>
+    <dimen name="menu_button_small_height">56dp</dimen>
     <dimen name="spinner_start_margin">16dp</dimen>
     <dimen name="header_section_header_top_margin">8dp</dimen>
     <dimen name="dialog_width">300dp</dimen>
@@ -28,6 +29,8 @@
     <dimen name="game_menu_button_container_padding">4dp</dimen>
     <dimen name="game_menu_button_container_diameter">72dp</dimen>
     <dimen name="game_menu_button_container_radius">36dp</dimen>
+    <dimen name="game_menu_button_timer_gap">8dp</dimen>
+    <dimen name="turn_timer_input_width">48dp</dimen>
 
     <!-- Reveal Layout -->
     <dimen name="pull_to_reveal_trigger_distance">8dp</dimen>
@@ -64,6 +67,8 @@
     <dimen name="player_options_panel_width">60dp</dimen>
     <dimen name="player_life_width">130dp</dimen>
     <dimen name="player_list_item_height">200dp</dimen>
+    <dimen name="player_selected_glow_width">5dp</dimen>
+    <dimen name="end_turn_button_height">32dp</dimen>
     <!-- If the player list would not exceed this value in height beyond the view,
     then cells are sized to fit without scrolling. This may cause player cells to be
     a few pixels smaller than they normally would -->
@@ -72,6 +77,7 @@
     <!-- Life Counter -->
 
     <!-- Counters -->
+    <dimen name="counter_incrementer_text_size">28sp</dimen>
     <dimen name="counter_label_default_max_text_size">32sp</dimen>
     <dimen name="counter_label_min_text_size">11sp</dimen>
     <!-- If the counter list would not exceed this value in width beyond the view,

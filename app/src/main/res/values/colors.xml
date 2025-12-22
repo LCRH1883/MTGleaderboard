@@ -42,6 +42,7 @@
     <color name="white">#fff</color>
     <color name="dark_grey">#9FA8AC</color>
     <color name="darker_grey">#868686</color>
+    <color name="game_menu_button_bg">#E0E0E0</color>
     <color name="off_black">#242424</color>
 
     <color name="accent_blue">#00B0FF</color>

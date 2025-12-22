@@ -10,15 +10,25 @@ import com.kenkeremath.mtgcounter.model.player.PlayerSetupModel
 import com.kenkeremath.mtgcounter.persistence.GameRepository
 import com.kenkeremath.mtgcounter.view.counter.edit.CounterSelectionUiModel
 import com.kenkeremath.mtgcounter.view.counter.edit.RearrangeCounterUiModel
+import com.kenkeremath.mtgcounter.view.TableLayoutPosition
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.lang.IllegalArgumentException
+import java.util.ArrayDeque
 import javax.inject.Inject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.lifecycle.viewModelScope
 
 @HiltViewModel
 class GameViewModel @Inject constructor(
     private val gameRepository: GameRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    companion object {
+        const val DEFAULT_TURN_TIMER_SECONDS = 5 * 60
+    }
 
     private val setupPlayers =
         savedStateHandle.get<List<PlayerSetupModel>>(GameActivity.ARGS_SETUP_PLAYERS)
@@ -41,6 +51,43 @@ class GameViewModel @Inject constructor(
     private val _hideNavigation = MutableLiveData<Boolean>()
     val hideNavigation: LiveData<Boolean> = _hideNavigation
 
+    private val _turnCount = MutableLiveData<Int>(1)
+    val turnCount: LiveData<Int> = _turnCount
+
+    private val _turnTimerEnabled = MutableLiveData<Boolean>(true)
+    val turnTimerEnabled: LiveData<Boolean> = _turnTimerEnabled
+
+    private val _turnTimerDurationSeconds = MutableLiveData<Int>(DEFAULT_TURN_TIMER_SECONDS)
+    val turnTimerDurationSeconds: LiveData<Int> = _turnTimerDurationSeconds
+
+    private val _turnTimerSeconds = MutableLiveData<Int>(DEFAULT_TURN_TIMER_SECONDS)
+    val turnTimerSeconds: LiveData<Int> = _turnTimerSeconds
+
+    private val _playerRotationClockwise = MutableLiveData<Boolean>(true)
+    val playerRotationClockwise: LiveData<Boolean> = _playerRotationClockwise
+
+    private val _currentTurnPlayerId = MutableLiveData<Int?>(null)
+    val currentTurnPlayerId: LiveData<Int?> = _currentTurnPlayerId
+
+    private val _startingPlayerSelected = MutableLiveData<Boolean>(false)
+    val startingPlayerSelected: LiveData<Boolean> = _startingPlayerSelected
+
+    private var startingPlayerId: Int? = null
+    private var startingPlayerSelectionEnabled = false
+    private val turnHistory = ArrayDeque<TurnHistoryEntry>()
+    private val playerOrderIds = setupPlayers.map { it.id }
+    private val clockwiseTurnPositions = listOf(
+        TableLayoutPosition.TOP_PANEL,
+        TableLayoutPosition.RIGHT_PANEL_1,
+        TableLayoutPosition.RIGHT_PANEL_2,
+        TableLayoutPosition.RIGHT_PANEL_3,
+        TableLayoutPosition.BOTTOM_PANEL,
+        TableLayoutPosition.LEFT_PANEL_3,
+        TableLayoutPosition.LEFT_PANEL_2,
+        TableLayoutPosition.LEFT_PANEL_1,
+    )
+    private var turnTimerJob: Job? = null
+
     /**
      * Maps player id to an ordered list of selected counter template ids
      * Counters that are removed are replaced with null, to assist in preserving user-selected
@@ -55,6 +102,9 @@ class GameViewModel @Inject constructor(
     }
 
     private fun initializePlayers() {
+        playerMap.clear()
+        availableCountersMap.clear()
+        pendingCounterSelectionMap.clear()
         for (i in setupPlayers.indices) {
 
             val player = GamePlayerUiModel(
@@ -82,7 +132,67 @@ class GameViewModel @Inject constructor(
             playerMap[i]?.counterSelections = generateSelectionUiModelsForPlayer(i)
             playerMap[i]?.rearrangeCounters = generateRearrangeUiModelsForPlayer(i)
         }
+        applyStartingPlayerState()
+        applyCurrentTurnState()
         _players.value = playerMap.values.toList()
+        _startingPlayerSelected.value = startingPlayerId != null
+    }
+
+    private fun applyStartingPlayerState() {
+        val selectionActive = startingPlayerSelectionEnabled && startingPlayerId == null
+        playerMap.values.forEach { player ->
+            player.isStartingPlayer = startingPlayerId == player.model.id
+            player.isStartingPlayerSelectable = selectionActive
+        }
+    }
+
+    private fun applyCurrentTurnState() {
+        val currentId = _currentTurnPlayerId.value
+        playerMap.values.forEach { player ->
+            player.isCurrentTurnPlayer = player.model.id == currentId
+        }
+    }
+
+    private fun updatePlayerState() {
+        applyStartingPlayerState()
+        applyCurrentTurnState()
+        _players.value = playerMap.values.toList()
+        _startingPlayerSelected.value = startingPlayerId != null
+    }
+
+    fun startStartingPlayerSelection() {
+        if (startingPlayerId != null) {
+            return
+        }
+        startingPlayerSelectionEnabled = true
+        updatePlayerState()
+    }
+
+    fun selectStartingPlayer(playerId: Int) {
+        if (!startingPlayerSelectionEnabled || startingPlayerId != null) {
+            return
+        }
+        startingPlayerId = playerId
+        startingPlayerSelectionEnabled = false
+        _currentTurnPlayerId.value = playerId
+        turnHistory.clear()
+        resetTurnTimer()
+        updatePlayerState()
+    }
+
+    fun selectRandomStartingPlayer() {
+        if (startingPlayerId != null) {
+            return
+        }
+        val playerIds = playerMap.values.map { it.model.id }
+        if (playerIds.isNotEmpty()) {
+            startingPlayerId = playerIds.random()
+            startingPlayerSelectionEnabled = false
+            _currentTurnPlayerId.value = startingPlayerId
+            turnHistory.clear()
+            resetTurnTimer()
+            updatePlayerState()
+        }
     }
 
     fun incrementPlayerLife(playerId: Int, lifeDifference: Int = 1) {
@@ -297,7 +407,136 @@ class GameViewModel @Inject constructor(
         _hideNavigation.value = hideNavigation
     }
 
+    fun setPlayerRotationClockwise(clockwise: Boolean) {
+        _playerRotationClockwise.value = clockwise
+        updatePlayerState()
+    }
+
+    fun setTurnTimerEnabled(enabled: Boolean) {
+        _turnTimerEnabled.value = enabled
+        if (enabled) {
+            resetTurnTimer()
+        } else {
+            stopTurnTimer()
+        }
+    }
+
+    fun setTurnTimerDuration(minutes: Int, seconds: Int) {
+        val clampedMinutes = minutes.coerceIn(0, 99)
+        val clampedSeconds = seconds.coerceIn(0, 59)
+        val totalSeconds = clampedMinutes * 60 + clampedSeconds
+        _turnTimerDurationSeconds.value = totalSeconds
+        _turnTimerSeconds.value = totalSeconds
+        if (_turnTimerEnabled.value == true && _currentTurnPlayerId.value != null) {
+            startTurnTimer()
+        } else {
+            stopTurnTimer()
+        }
+    }
+
+    fun endTurn(playerId: Int) {
+        val currentId = _currentTurnPlayerId.value ?: return
+        if (currentId != playerId) {
+            return
+        }
+        val order = getTurnOrderIds()
+        val currentIndex = order.indexOf(currentId)
+        if (currentIndex == -1 || order.isEmpty()) {
+            return
+        }
+        val nextIndex = (currentIndex + 1) % order.size
+        val nextPlayerId = order[nextIndex]
+        val incrementedTurn = startingPlayerId != null && nextPlayerId == startingPlayerId
+        turnHistory.addLast(TurnHistoryEntry(currentId, incrementedTurn))
+        _currentTurnPlayerId.value = nextPlayerId
+        if (incrementedTurn) {
+            _turnCount.value = (_turnCount.value ?: 1) + 1
+        }
+        resetTurnTimer()
+        updatePlayerState()
+    }
+
+    fun goBackTurn() {
+        if (turnHistory.isEmpty()) {
+            return
+        }
+        val entry = turnHistory.removeLast()
+        _currentTurnPlayerId.value = entry.previousPlayerId
+        if (entry.incrementedTurn) {
+            val currentCount = _turnCount.value ?: 1
+            _turnCount.value = maxOf(1, currentCount - 1)
+        }
+        resetTurnTimer()
+        updatePlayerState()
+    }
+
+    private fun getTurnOrderIds(): List<Int> {
+        val clockwise = _playerRotationClockwise.value != false
+        val baseOrder = playerOrderIds
+        if (tabletopType == TabletopType.LIST || tabletopType == TabletopType.NONE) {
+            return if (clockwise) baseOrder else baseOrder.reversed()
+        }
+        val positions = tabletopType.positions
+        if (positions.isEmpty()) {
+            return if (clockwise) baseOrder else baseOrder.reversed()
+        }
+        if (positions.contains(TableLayoutPosition.SOLO_PANEL)) {
+            return baseOrder.take(1)
+        }
+        val positionToPlayer = mutableMapOf<TableLayoutPosition, Int>()
+        for (i in positions.indices) {
+            if (i < baseOrder.size) {
+                positionToPlayer[positions[i]] = baseOrder[i]
+            }
+        }
+        val orderedPlayers = clockwiseTurnPositions
+            .filter { positionToPlayer.containsKey(it) }
+            .mapNotNull { positionToPlayer[it] }
+        return if (clockwise) orderedPlayers else orderedPlayers.reversed()
+    }
+
     fun resetGame() {
+        startingPlayerId = null
+        startingPlayerSelectionEnabled = false
+        turnHistory.clear()
+        _currentTurnPlayerId.value = null
+        _turnCount.value = 1
+        resetTurnTimer()
         initializePlayers()
+    }
+
+    private data class TurnHistoryEntry(
+        val previousPlayerId: Int,
+        val incrementedTurn: Boolean,
+    )
+
+    private fun resetTurnTimer() {
+        val durationSeconds = _turnTimerDurationSeconds.value ?: DEFAULT_TURN_TIMER_SECONDS
+        _turnTimerSeconds.value = durationSeconds
+        if (_turnTimerEnabled.value == true && _currentTurnPlayerId.value != null) {
+            startTurnTimer()
+        } else {
+            stopTurnTimer()
+        }
+    }
+
+    private fun startTurnTimer() {
+        stopTurnTimer()
+        turnTimerJob = viewModelScope.launch {
+            while (true) {
+                delay(1000L)
+                val currentSeconds = _turnTimerSeconds.value ?: 0
+                if (currentSeconds <= 0) {
+                    _turnTimerSeconds.value = 0
+                    break
+                }
+                _turnTimerSeconds.value = currentSeconds - 1
+            }
+        }
+    }
+
+    private fun stopTurnTimer() {
+        turnTimerJob?.cancel()
+        turnTimerJob = null
     }
 }

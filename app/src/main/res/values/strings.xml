@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MTGleaderboard</string>
+    <string name="app_name">MTG Leader Board</string>
 
     <string name="no">No</string>
     <string name="yes">Yes</string>
@@ -28,6 +28,18 @@
     <string name="are_you_sure_exit">Are you sure you want to exit the game?</string>
     <string name="reset_game">Reset Game</string>
     <string name="are_you_sure_reset">Are you sure you want to reset the game?</string>
+    <string name="select_player">Select Player</string>
+    <string name="random_player">Random Player</string>
+    <string name="options">Options</string>
+    <string name="player_rotation">Player Rotation</string>
+    <string name="clockwise">Clockwise</string>
+    <string name="counter_clockwise">Counterclockwise</string>
+    <string name="turn_timer">Turn Timer</string>
+    <string name="turn_timer_on">On</string>
+    <string name="turn_timer_off">Off</string>
+    <string name="turn_options">Turn Options</string>
+    <string name="go_back_turn">Go Back</string>
+    <string name="end_turn">End Turn</string>
     <string name="keep_screen_awake">Keep Screen Awake</string>
     <string name="hide_navigation">Hide Navigation</string>
 

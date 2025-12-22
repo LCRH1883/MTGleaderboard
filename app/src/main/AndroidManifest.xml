@@ -6,9 +6,9 @@
     <application
         android:name=".MTGLeaderboardApplication"
         android:allowBackup="false"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_skull"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher"
+        android:roundIcon="@drawable/ic_skull"
         android:supportsRtl="true"
         android:theme="@style/LightTheme">
         <activity
