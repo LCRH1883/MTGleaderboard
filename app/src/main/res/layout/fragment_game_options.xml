@@ -58,6 +58,15 @@
         android:layout_marginTop="@dimen/default_padding_half"
         android:text="@string/random_player" />
 
+    <Button
+        android:id="@+id/options_button"
+        style="@style/MenuButton.Round"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/menu_button_height"
+        android:layout_marginHorizontal="@dimen/default_padding"
+        android:layout_marginTop="@dimen/default_padding_half"
+        android:text="@string/options" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -82,56 +91,6 @@
             android:layout_height="@dimen/menu_button_small_height"
             android:layout_weight="1"
             android:text="@string/exit_game" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/default_padding"
-        android:orientation="vertical">
-
-        <LinearLayout
-            android:id="@+id/keep_screen_awake_container"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/default_padding"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="@dimen/setup_padding_horizontal"
-            app:layout_constraintTop_toBottomOf="@id/tabletop_container">
-
-            <CheckBox
-                android:id="@+id/keep_screen_awake_checkbox"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <TextView
-                style="@style/Label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/keep_screen_awake" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/hide_navigation_container"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="@dimen/setup_padding_horizontal"
-            app:layout_constraintTop_toBottomOf="@id/keep_screen_awake_container">
-
-            <CheckBox
-                android:id="@+id/hide_navigation_checkbox"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <TextView
-                style="@style/Label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/hide_navigation" />
-        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>

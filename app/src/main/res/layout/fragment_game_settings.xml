@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/scBackgroundColor"
+    android:gravity="center_horizontal"
+    android:minWidth="@dimen/dialog_width"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/default_padding">
+
+    <ImageView
+        android:id="@+id/close_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start"
+        android:foreground="?attr/selectableItemBackground"
+        android:padding="16dp"
+        android:src="@drawable/ic_close"
+        app:tint="?attr/scTextColorPrimary" />
+
+    <TextView
+        android:id="@+id/title"
+        style="@style/Header1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/default_padding"
+        android:text="@string/options" />
+
+    <LinearLayout
+        android:id="@+id/player_rotation_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/default_padding"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/player_rotation_label"
+            style="@style/Header3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/player_rotation" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/player_rotation_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/clockwise"
+            android:textColor="@color/white" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/keep_screen_awake_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/default_padding"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/setup_padding_horizontal">
+
+        <CheckBox
+            android:id="@+id/keep_screen_awake_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            style="@style/Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/keep_screen_awake" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/hide_navigation_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/setup_padding_horizontal">
+
+        <CheckBox
+            android:id="@+id/hide_navigation_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            style="@style/Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/hide_navigation" />
+    </LinearLayout>
+
+</LinearLayout>

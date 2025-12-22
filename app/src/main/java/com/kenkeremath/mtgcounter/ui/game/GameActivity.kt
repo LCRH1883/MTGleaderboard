@@ -60,6 +60,7 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
     private lateinit var playersRecyclerAdapter: GamePlayerRecyclerAdapter
 
     private val viewModel: GameViewModel by viewModels()
+    private var currentPlayers: List<GamePlayerUiModel> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -113,8 +114,10 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         }
 
         viewModel.players.observe(this) {
-            tabletopLayoutAdapter.updateAll(viewModel.tabletopType, it)
-            playersRecyclerAdapter.setData(it)
+            renderPlayers(it)
+        }
+        viewModel.playerRotationClockwise.observe(this) {
+            renderPlayers(currentPlayers)
         }
 
         viewModel.keepScreenOn.observe(this) {
@@ -124,6 +127,14 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
         }
+    }
+
+    private fun renderPlayers(players: List<GamePlayerUiModel>) {
+        currentPlayers = players
+        val rotationClockwise = viewModel.playerRotationClockwise.value != false
+        val orderedPlayers = if (rotationClockwise) players else players.reversed()
+        tabletopLayoutAdapter.updateAll(viewModel.tabletopType, orderedPlayers)
+        playersRecyclerAdapter.setData(orderedPlayers)
     }
 
     private fun addMenuButton() {

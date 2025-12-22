@@ -44,6 +44,9 @@ class GameViewModel @Inject constructor(
     private val _turnCount = MutableLiveData<Int>(1)
     val turnCount: LiveData<Int> = _turnCount
 
+    private val _playerRotationClockwise = MutableLiveData<Boolean>(true)
+    val playerRotationClockwise: LiveData<Boolean> = _playerRotationClockwise
+
     private val _startingPlayerSelected = MutableLiveData<Boolean>(false)
     val startingPlayerSelected: LiveData<Boolean> = _startingPlayerSelected
 
@@ -352,6 +355,10 @@ class GameViewModel @Inject constructor(
     fun setHideNavigation(hideNavigation: Boolean) {
         gameRepository.hideNavigation = hideNavigation
         _hideNavigation.value = hideNavigation
+    }
+
+    fun setPlayerRotationClockwise(clockwise: Boolean) {
+        _playerRotationClockwise.value = clockwise
     }
 
     fun resetGame() {
