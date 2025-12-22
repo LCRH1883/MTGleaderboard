@@ -20,13 +20,13 @@ See `docs/versioning.md` for the version name/number format and current version.
 
 # Screen Shots
 
-<table width="100%">
+<table style="width:100%;">
   <tr>
-    <td width="20%"><img src="https://imgur.com/xKFBdkE.jpg" alt="Game Screen (Light Mode)"/></td>
-    <td width="20%"><img src="https://imgur.com/6edKGbS.jpg" alt="Game Screen (Dark Mode)"/> </td>
-    <td width="20%"><img src="https://imgur.com/ZfqiLXY.jpg" alt="Setup Screen"/> </td>
-    <td width="20%"><img src="https://imgur.com/ISwadPq.jpg" alt="Game Screen with Counters"/> </td>
-    <td width="20%"><img src="https://imgur.com/sxNNI7U.jpg" alt="Configuring Profile and Counters"/> </td>
+    <td style="width:20%;"><img src="https://imgur.com/xKFBdkE.jpg" alt="Game Screen (Light Mode)"/></td>
+    <td style="width:20%;"><img src="https://imgur.com/6edKGbS.jpg" alt="Game Screen (Dark Mode)"/> </td>
+    <td style="width:20%;"><img src="https://imgur.com/ZfqiLXY.jpg" alt="Setup Screen"/> </td>
+    <td style="width:20%;"><img src="https://imgur.com/ISwadPq.jpg" alt="Game Screen with Counters"/> </td>
+    <td style="width:20%;"><img src="https://imgur.com/sxNNI7U.jpg" alt="Configuring Profile and Counters"/> </td>
   </tr>
 </table>
 
