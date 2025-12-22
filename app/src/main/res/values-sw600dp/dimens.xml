@@ -17,6 +17,8 @@
     <dimen name="game_menu_button_container_padding">8dp</dimen>
     <dimen name="game_menu_button_container_diameter">96dp</dimen>
     <dimen name="game_menu_button_container_radius">48dp</dimen>
+    <dimen name="game_menu_button_timer_gap">12dp</dimen>
+    <dimen name="turn_timer_input_width">64dp</dimen>
 
     <!-- Reveal Layout -->
     <dimen name="pull_to_reveal_trigger_distance">8dp</dimen>

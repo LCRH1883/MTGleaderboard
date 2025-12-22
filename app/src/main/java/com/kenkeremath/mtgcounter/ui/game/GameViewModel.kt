@@ -1,6 +1,7 @@
 package com.kenkeremath.mtgcounter.ui.game
 
 import androidx.lifecycle.*
+import androidx.lifecycle.viewModelScope
 import com.kenkeremath.mtgcounter.R
 import com.kenkeremath.mtgcounter.model.TabletopType
 import com.kenkeremath.mtgcounter.model.counter.CounterModel
@@ -12,6 +13,10 @@ import com.kenkeremath.mtgcounter.view.counter.edit.CounterSelectionUiModel
 import com.kenkeremath.mtgcounter.view.counter.edit.RearrangeCounterUiModel
 import com.kenkeremath.mtgcounter.view.TableLayoutPosition
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.lang.IllegalArgumentException
 import javax.inject.Inject
 
@@ -45,6 +50,12 @@ class GameViewModel @Inject constructor(
     private val _turnCount = MutableLiveData<Int>(1)
     val turnCount: LiveData<Int> = _turnCount
 
+    private val _turnTimerDurationSeconds = MutableLiveData<Int>(DEFAULT_TURN_TIMER_SECONDS)
+    val turnTimerDurationSeconds: LiveData<Int> = _turnTimerDurationSeconds
+
+    private val _turnTimerSeconds = MutableLiveData<Int>(DEFAULT_TURN_TIMER_SECONDS)
+    val turnTimerSeconds: LiveData<Int> = _turnTimerSeconds
+
     private val _playerRotationClockwise = MutableLiveData<Boolean>(true)
     val playerRotationClockwise: LiveData<Boolean> = _playerRotationClockwise
 
@@ -67,6 +78,11 @@ class GameViewModel @Inject constructor(
         TableLayoutPosition.LEFT_PANEL_2,
         TableLayoutPosition.LEFT_PANEL_1,
     )
+    private var turnTimerJob: Job? = null
+
+    companion object {
+        private const val DEFAULT_TURN_TIMER_SECONDS = 5 * 60
+    }
 
     /**
      * Maps player id to an ordered list of selected counter template ids
@@ -155,6 +171,7 @@ class GameViewModel @Inject constructor(
         startingPlayerId = playerId
         startingPlayerSelectionEnabled = false
         _currentTurnPlayerId.value = playerId
+        resetTurnTimer()
         updatePlayerState()
     }
 
@@ -167,6 +184,7 @@ class GameViewModel @Inject constructor(
             startingPlayerId = playerIds.random()
             startingPlayerSelectionEnabled = false
             _currentTurnPlayerId.value = startingPlayerId
+            resetTurnTimer()
             updatePlayerState()
         }
     }
@@ -388,6 +406,14 @@ class GameViewModel @Inject constructor(
         updatePlayerState()
     }
 
+    fun setTurnTimerDuration(minutes: Int, seconds: Int) {
+        val safeMinutes = minutes.coerceAtLeast(0)
+        val safeSeconds = seconds.coerceIn(0, 59)
+        val totalSeconds = safeMinutes * 60 + safeSeconds
+        _turnTimerDurationSeconds.value = totalSeconds
+        resetTurnTimer()
+    }
+
     fun endTurn(playerId: Int) {
         val currentId = _currentTurnPlayerId.value ?: return
         if (currentId != playerId) {
@@ -399,8 +425,12 @@ class GameViewModel @Inject constructor(
             return
         }
         val nextIndex = (currentIndex + 1) % order.size
-        _currentTurnPlayerId.value = order[nextIndex]
-        _turnCount.value = (_turnCount.value ?: 1) + 1
+        val nextPlayerId = order[nextIndex]
+        _currentTurnPlayerId.value = nextPlayerId
+        if (startingPlayerId != null && nextPlayerId == startingPlayerId) {
+            _turnCount.value = (_turnCount.value ?: 1) + 1
+        }
+        resetTurnTimer()
         updatePlayerState()
     }
 
@@ -429,11 +459,30 @@ class GameViewModel @Inject constructor(
         return if (clockwise) orderedPlayers else orderedPlayers.reversed()
     }
 
+    private fun resetTurnTimer() {
+        turnTimerJob?.cancel()
+        val duration = _turnTimerDurationSeconds.value ?: DEFAULT_TURN_TIMER_SECONDS
+        _turnTimerSeconds.value = duration
+        if (_currentTurnPlayerId.value == null) {
+            return
+        }
+        turnTimerJob = viewModelScope.launch {
+            var remaining = duration
+            while (isActive && remaining > 0) {
+                delay(1000)
+                remaining -= 1
+                _turnTimerSeconds.value = remaining
+            }
+        }
+    }
+
     fun resetGame() {
         startingPlayerId = null
         startingPlayerSelectionEnabled = false
         _currentTurnPlayerId.value = null
         _turnCount.value = 1
+        turnTimerJob?.cancel()
+        _turnTimerSeconds.value = _turnTimerDurationSeconds.value ?: DEFAULT_TURN_TIMER_SECONDS
         initializePlayers()
     }
 }

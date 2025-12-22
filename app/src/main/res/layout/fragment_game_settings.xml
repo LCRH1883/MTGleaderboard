@@ -41,7 +41,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="@string/player_rotation" />
+            android:text="@string/player_rotation"
+            android:textColor="?attr/scTextColorPrimary" />
 
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/player_rotation_switch"
@@ -49,6 +50,70 @@
             android:layout_height="wrap_content"
             android:text="@string/clockwise"
             android:textColor="?attr/scTextColorPrimary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/turn_timer_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/default_padding"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/turn_timer_label"
+            style="@style/Header3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/turn_timer"
+            android:textColor="?attr/scTextColorPrimary" />
+
+        <LinearLayout
+            android:id="@+id/turn_timer_inputs"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/turn_timer_minutes"
+                style="@style/ValueEditText"
+                android:layout_width="@dimen/turn_timer_input_width"
+                android:layout_height="wrap_content"
+                android:ems="2"
+                android:gravity="center"
+                android:hint="5"
+                android:inputType="number"
+                android:maxEms="3"
+                android:maxLength="3"
+                android:textColor="?attr/scTextColorPrimary"
+                android:textColorHint="?attr/scTextColorCaption" />
+
+            <TextView
+                android:id="@+id/turn_timer_colon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="6dp"
+                android:text=":"
+                android:textColor="?attr/scTextColorPrimary"
+                android:textSize="18sp" />
+
+            <EditText
+                android:id="@+id/turn_timer_seconds"
+                style="@style/ValueEditText"
+                android:layout_width="@dimen/turn_timer_input_width"
+                android:layout_height="wrap_content"
+                android:ems="2"
+                android:gravity="center"
+                android:hint="00"
+                android:inputType="number"
+                android:maxEms="2"
+                android:maxLength="2"
+                android:textColor="?attr/scTextColorPrimary"
+                android:textColorHint="?attr/scTextColorCaption" />
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout

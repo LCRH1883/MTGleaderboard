@@ -35,6 +35,7 @@
     <string name="clockwise">Clockwise</string>
     <string name="counter_clockwise">Counterclockwise</string>
     <string name="end_turn">End Turn</string>
+    <string name="turn_timer">Turn Timer</string>
     <string name="keep_screen_awake">Keep Screen Awake</string>
     <string name="hide_navigation">Hide Navigation</string>
 

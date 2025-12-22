@@ -3,15 +3,19 @@ package com.kenkeremath.mtgcounter.ui.game
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.Paint
+import android.graphics.Typeface
 import android.graphics.drawable.RippleDrawable
 import android.os.Bundle
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
@@ -33,6 +37,8 @@ import com.kenkeremath.mtgcounter.view.TableLayoutPosition
 import com.kenkeremath.mtgcounter.view.TabletopLayout
 import com.kenkeremath.mtgcounter.view.counter.edit.PlayerMenuListener
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.Locale
+import kotlin.math.roundToInt
 
 
 @AndroidEntryPoint
@@ -62,7 +68,12 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
     private val viewModel: GameViewModel by viewModels()
     private var currentPlayers: List<GamePlayerUiModel> = emptyList()
     private var menuButtonContainer: FrameLayout? = null
+    private var menuButtonRotatingContainer: FrameLayout? = null
     private var menuButtonIcon: ImageView? = null
+    private var menuButtonTurnText: TextView? = null
+    private var menuButtonTimerText: TextView? = null
+    private var latestTurnCount: Int = 1
+    private var latestTurnTimerSeconds: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -115,11 +126,22 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
             addMenuButton()
         }
 
+        latestTurnCount = viewModel.turnCount.value ?: 1
+        latestTurnTimerSeconds = viewModel.turnTimerSeconds.value
+            ?: viewModel.turnTimerDurationSeconds.value
+            ?: 0
+
         viewModel.players.observe(this) {
             renderPlayers(it)
         }
         viewModel.currentTurnPlayerId.observe(this) {
             updateMenuButtonRotation()
+        }
+        viewModel.turnCount.observe(this) {
+            updateTurnCounterText(it)
+        }
+        viewModel.turnTimerSeconds.observe(this) {
+            updateTurnTimerText(it)
         }
 
         viewModel.keepScreenOn.observe(this) {
@@ -146,21 +168,108 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 val container = FrameLayout(this@GameActivity)
                 val containerSize =
                     resources.getDimensionPixelSize(R.dimen.game_menu_button_container_diameter)
+                val timerGap = resources.getDimensionPixelSize(R.dimen.game_menu_button_timer_gap)
+                val timerTextSize = containerSize * 0.6f
+                val timerTextWidth = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    textSize = timerTextSize
+                }.measureText("000:00").roundToInt()
+                val containerWidth = containerSize + timerGap + timerTextWidth
                 val containerLp = FrameLayout.LayoutParams(
-                    containerSize,
+                    containerWidth,
                     containerSize,
                 )
+                container.clipChildren = false
+                container.clipToPadding = false
+
+                val rotatingContainer = FrameLayout(this@GameActivity)
+                rotatingContainer.layoutParams = FrameLayout.LayoutParams(
+                    containerWidth,
+                    containerSize
+                )
+                rotatingContainer.pivotX = containerSize / 2f
+                rotatingContainer.pivotY = containerSize / 2f
+                rotatingContainer.clipChildren = false
+                rotatingContainer.clipToPadding = false
+
+                val circleContainer = FrameLayout(this@GameActivity)
+                circleContainer.layoutParams = FrameLayout.LayoutParams(
+                    containerSize,
+                    containerSize
+                )
+                circleContainer.clipToPadding = false
+                circleContainer.clipChildren = false
+
                 val menuButton = ImageView(this@GameActivity)
                 menuButton.setImageResource(R.drawable.ic_skull)
-                container.addView(
+                menuButton.scaleX = 1.15f
+                menuButton.scaleY = 1.15f
+                circleContainer.addView(
                     menuButton, FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.MATCH_PARENT,
-                        FrameLayout.LayoutParams.MATCH_PARENT
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        Gravity.CENTER
                     )
                 )
+
+                val turnText = TextView(this@GameActivity)
+                turnText.setTextColor(ContextCompat.getColor(this@GameActivity, R.color.light_red))
+                turnText.setTextSize(TypedValue.COMPLEX_UNIT_PX, containerSize * 0.4f)
+                turnText.setTypeface(turnText.typeface, Typeface.BOLD)
+                turnText.gravity = Gravity.CENTER
+                turnText.includeFontPadding = false
+                circleContainer.addView(
+                    turnText, FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.WRAP_CONTENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT,
+                        Gravity.CENTER
+                    )
+                )
+                rotatingContainer.addView(circleContainer)
+
+                val dividerHeight =
+                    resources.getDimensionPixelSize(R.dimen.player_divider_width)
+                val dividerView = View(this@GameActivity)
+                dividerView.setBackgroundColor(
+                    ScThemeUtils.resolveThemeColor(
+                        this@GameActivity,
+                        R.attr.scPlayerDividerColor
+                    )
+                )
+                rotatingContainer.addView(
+                    dividerView, FrameLayout.LayoutParams(
+                        containerWidth - containerSize,
+                        dividerHeight,
+                        Gravity.CENTER_VERTICAL
+                    ).apply {
+                        leftMargin = containerSize
+                    }
+                )
+
+                val timerText = TextView(this@GameActivity)
+                timerText.setTextColor(
+                    ScThemeUtils.resolveThemeColor(
+                        this@GameActivity,
+                        R.attr.scTextColorPrimary
+                    )
+                )
+                timerText.setTextSize(TypedValue.COMPLEX_UNIT_PX, timerTextSize)
+                timerText.gravity = Gravity.CENTER
+                timerText.includeFontPadding = false
+                timerText.setSingleLine(true)
+                timerText.minWidth = timerTextWidth
+                rotatingContainer.addView(
+                    timerText, FrameLayout.LayoutParams(
+                        timerTextWidth,
+                        FrameLayout.LayoutParams.WRAP_CONTENT,
+                        Gravity.CENTER_VERTICAL
+                    ).apply {
+                        leftMargin = containerSize + timerGap
+                    }
+                )
+                container.addView(rotatingContainer)
                 val containerPadding =
                     resources.getDimensionPixelSize(R.dimen.game_menu_button_container_padding)
-                container.setPadding(
+                circleContainer.setPadding(
                     containerPadding,
                     containerPadding,
                     containerPadding,
@@ -176,7 +285,7 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                     }
                     TabletopType.ONE_VERTICAL -> {
                         //Top left
-                        container.background = ContextCompat.getDrawable(
+                        circleContainer.background = ContextCompat.getDrawable(
                             this@GameActivity,
                             R.drawable.game_button_container_bg
                         )
@@ -187,12 +296,11 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                         //Top right (appears as top left)
                         containerLp.topMargin = containerPadding
                         containerLp.leftMargin =
-                            tabletopLayout.width - containerSize - containerPadding
-                        container.background = ContextCompat.getDrawable(
+                            tabletopLayout.width - containerWidth - containerPadding
+                        circleContainer.background = ContextCompat.getDrawable(
                             this@GameActivity,
                             R.drawable.game_button_container_bg
                         )
-                        container.rotation = 90f
                     }
                     TabletopType.FOUR_ACROSS,
                     TabletopType.SIX_CIRCLE,
@@ -200,27 +308,25 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                         //Center in screen
                         containerLp.topMargin = tabletopLayout.height / 2 - containerSize / 2
                         containerLp.leftMargin = tabletopLayout.width / 2 - containerSize / 2
-                        container.background = ContextCompat.getDrawable(
+                        circleContainer.background = ContextCompat.getDrawable(
                             this@GameActivity,
                             R.drawable.game_button_container_bg
                         )
-                        container.rotation = 90f
                     }
                     TabletopType.TWO_HORIZONTAL,
                     TabletopType.FIVE_ACROSS,
                     TabletopType.THREE_ACROSS -> {
                         //Center top (appears as center left)
                         containerLp.leftMargin = tabletopLayout.width / 2 - containerSize / 2
-                        container.background = ContextCompat.getDrawable(
+                        circleContainer.background = ContextCompat.getDrawable(
                             this@GameActivity,
                             R.drawable.game_button_container_side_bg
                         )
-                        container.rotation = 90f
                     }
                     TabletopType.TWO_VERTICAL -> {
                         //Center left
                         containerLp.topMargin = tabletopLayout.height / 2 - containerSize / 2
-                        container.background = ContextCompat.getDrawable(
+                        circleContainer.background = ContextCompat.getDrawable(
                             this@GameActivity,
                             R.drawable.game_button_container_side_bg
                         )
@@ -230,59 +336,62 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                         containerLp.topMargin =
                             tabletopLayout.panels[TableLayoutPosition.TOP_PANEL]!!.height
                         containerLp.leftMargin = tabletopLayout.width / 2 - containerSize / 2
-                        container.background = ContextCompat.getDrawable(
+                        circleContainer.background = ContextCompat.getDrawable(
                             this@GameActivity,
                             R.drawable.game_button_container_side_bg
                         )
-                        container.rotation = 90f
                     }
                     TabletopType.SIX_ACROSS -> {
                         //Center in topmost (appears leftmost) intersection
                         containerLp.topMargin =
                             tabletopLayout.panels[TableLayoutPosition.LEFT_PANEL_1]!!.height - containerSize / 2
                         containerLp.leftMargin = tabletopLayout.width / 2 - containerSize / 2
-                        container.background = ContextCompat.getDrawable(
+                        circleContainer.background = ContextCompat.getDrawable(
                             this@GameActivity,
                             R.drawable.game_button_container_bg
                         )
-                        container.rotation = 90f
                     }
                     TabletopType.FIVE_CIRCLE -> {
                         //Center in bottom (appears rightmost) intersection
                         containerLp.topMargin =
                             tabletopLayout.height - tabletopLayout.panels[TableLayoutPosition.LEFT_PANEL_1]!!.height - containerSize / 2
                         containerLp.leftMargin = tabletopLayout.width / 2 - containerSize / 2
-                        container.background = ContextCompat.getDrawable(
+                        circleContainer.background = ContextCompat.getDrawable(
                             this@GameActivity,
                             R.drawable.game_button_container_bg
                         )
-                        container.rotation = 90f
                     }
                     TabletopType.THREE_CIRCLE -> {
                         //Center in intersection
                         containerLp.topMargin =
                             tabletopLayout.panels[TableLayoutPosition.TOP_PANEL]!!.height - containerSize / 2
                         containerLp.leftMargin = tabletopLayout.width / 2 - containerSize / 2
-                        container.background = ContextCompat.getDrawable(
+                        circleContainer.background = ContextCompat.getDrawable(
                             this@GameActivity,
                             R.drawable.game_button_container_bg
                         )
-                        container.rotation = 90f
                     }
                 }
                 gameContainer.addView(container, containerLp)
-                val outValue = TypedValue()
-                theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
-                container.foreground = RippleDrawable(
+                circleContainer.foreground = RippleDrawable(
                     ColorStateList.valueOf(
                         ScThemeUtils.resolveThemeColor(this@GameActivity, R.attr.scAccentColor)
-                    ), null, container.background
+                    ), null, circleContainer.background
                 )
-                container.setOnClickListener {
+                circleContainer.isClickable = true
+                circleContainer.setOnClickListener {
                     openGameMenu()
                 }
+                rotatingContainer.setOnClickListener {
+                    openGameMenu()
+                }
+                updateTurnCounterText(latestTurnCount)
+                updateTurnTimerText(latestTurnTimerSeconds)
                 menuButtonContainer = container
+                menuButtonRotatingContainer = rotatingContainer
                 menuButtonIcon = menuButton
+                menuButtonTurnText = turnText
+                menuButtonTimerText = timerText
                 updateMenuButtonRotation()
                 return false
             }
@@ -290,13 +399,22 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
     }
 
     private fun updateMenuButtonRotation() {
+        val rotatingContainer = menuButtonRotatingContainer ?: return
         val icon = menuButtonIcon ?: return
+        val turnText = menuButtonTurnText
+        val timerText = menuButtonTimerText
         if (viewModel.tabletopType == TabletopType.LIST) {
+            rotatingContainer.rotation = 0f
             icon.rotation = 0f
+            turnText?.rotation = 0f
+            timerText?.rotation = 0f
             return
         }
         val currentTurnId = viewModel.currentTurnPlayerId.value ?: run {
+            rotatingContainer.rotation = 0f
             icon.rotation = 0f
+            turnText?.rotation = 0f
+            timerText?.rotation = 0f
             return
         }
         var targetRotation: Float? = null
@@ -311,11 +429,35 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
             }
         }
         if (targetRotation == null) {
+            rotatingContainer.rotation = 0f
             icon.rotation = 0f
+            turnText?.rotation = 0f
+            timerText?.rotation = 0f
             return
         }
         val containerRotation = menuButtonContainer?.rotation ?: 0f
-        icon.rotation = targetRotation - containerRotation + 180f
+        val finalRotation = -targetRotation - containerRotation
+        rotatingContainer.rotation = finalRotation
+        icon.rotation = 0f
+        turnText?.rotation = 0f
+        timerText?.rotation = 0f
+    }
+
+    private fun updateTurnCounterText(turnCount: Int) {
+        latestTurnCount = turnCount
+        menuButtonTurnText?.text = turnCount.toString()
+    }
+
+    private fun updateTurnTimerText(remainingSeconds: Int) {
+        latestTurnTimerSeconds = remainingSeconds
+        menuButtonTimerText?.text = formatTurnTimer(remainingSeconds)
+    }
+
+    private fun formatTurnTimer(remainingSeconds: Int): String {
+        val safeSeconds = remainingSeconds.coerceAtLeast(0)
+        val minutes = safeSeconds / 60
+        val seconds = safeSeconds % 60
+        return String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
     }
 
     private fun openGameMenu() {
