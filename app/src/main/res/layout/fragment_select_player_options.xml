@@ -56,7 +56,7 @@
         android:layout_marginTop="@dimen/default_padding"
         android:text="@string/customize_player_color" />
 
-    <com.kenkeremath.mtgcounter.view.LineColorPickerView
+    <com.intagri.mtgleader.view.LineColorPickerView
         android:id="@+id/color_picker_view"
         style="@style/ColorPicker"
         android:layout_width="match_parent"

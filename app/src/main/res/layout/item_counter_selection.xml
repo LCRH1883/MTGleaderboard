@@ -6,7 +6,7 @@
     android:foreground="?attr/selectableItemBackground"
     android:padding="@dimen/default_padding_half">
 
-    <com.kenkeremath.mtgcounter.view.counter.CounterIconView
+    <com.intagri.mtgleader.view.counter.CounterIconView
         android:id="@+id/counter_icon_view"
         android:layout_width="0dp"
         android:layout_height="match_parent"

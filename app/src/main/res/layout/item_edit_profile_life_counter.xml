@@ -34,7 +34,7 @@
 
     </LinearLayout>
 
-    <com.kenkeremath.mtgcounter.view.counter.LifeCounterView
+    <com.intagri.mtgleader.view.counter.LifeCounterView
         android:id="@+id/life_counter_preview_view"
         android:layout_width="100dp"
         android:layout_height="120dp"

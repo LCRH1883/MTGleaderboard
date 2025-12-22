@@ -9,7 +9,7 @@
         android:layout_height="wrap_content"
         android:padding="@dimen/default_padding">
 
-        <com.kenkeremath.mtgcounter.view.counter.CounterIconView
+        <com.intagri.mtgleader.view.counter.CounterIconView
             android:id="@+id/counter_icon_view"
             android:layout_width="@dimen/edit_player_counter_icon_size"
             android:layout_height="@dimen/edit_player_counter_icon_size"

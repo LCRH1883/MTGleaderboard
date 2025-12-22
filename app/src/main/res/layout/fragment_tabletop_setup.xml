@@ -15,7 +15,7 @@
         app:navigationIcon="@drawable/ic_back"
         app:title="@string/customize_table_title" />
 
-    <com.kenkeremath.mtgcounter.view.TabletopLayout
+    <com.intagri.mtgleader.view.TabletopLayout
         android:id="@+id/tabletop_layout"
         android:layout_width="match_parent"
         android:layout_height="0dp"

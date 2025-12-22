@@ -54,7 +54,7 @@
                 android:text="@string/rearrange_counters" />
         </LinearLayout>
 
-        <com.kenkeremath.mtgcounter.view.HoldableButton
+        <com.intagri.mtgleader.view.HoldableButton
             android:id="@+id/revealed_rearrange_counters_button"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -105,7 +105,7 @@
                 android:text="@string/roll_title" />
         </LinearLayout>
 
-        <com.kenkeremath.mtgcounter.view.HoldableButton
+        <com.intagri.mtgleader.view.HoldableButton
             android:id="@+id/revealed_roll_button"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -156,7 +156,7 @@
                 android:text="@string/add_counter_title" />
         </LinearLayout>
 
-        <com.kenkeremath.mtgcounter.view.HoldableButton
+        <com.intagri.mtgleader.view.HoldableButton
             android:id="@+id/revealed_add_counter_button"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

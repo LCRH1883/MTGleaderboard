@@ -37,7 +37,7 @@
                 android:layout_height="@dimen/nav_menu_divider_width"
                 android:background="?attr/scDividerColor" />
 
-            <com.kenkeremath.mtgcounter.view.ThemeItemView
+            <com.intagri.mtgleader.view.ThemeItemView
                 android:id="@+id/light_theme"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -49,7 +49,7 @@
                 android:layout_height="@dimen/nav_menu_divider_width"
                 android:background="?attr/scDividerColor" />
 
-            <com.kenkeremath.mtgcounter.view.ThemeItemView
+            <com.intagri.mtgleader.view.ThemeItemView
                 android:id="@+id/pink_theme"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -61,7 +61,7 @@
                 android:layout_height="@dimen/nav_menu_divider_width"
                 android:background="?attr/scDividerColor" />
 
-            <com.kenkeremath.mtgcounter.view.ThemeItemView
+            <com.intagri.mtgleader.view.ThemeItemView
                 android:id="@+id/karn_theme"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -82,7 +82,7 @@
                 android:layout_marginBottom="8dp"
                 android:text="@string/themes_dark" />
 
-            <com.kenkeremath.mtgcounter.view.ThemeItemView
+            <com.intagri.mtgleader.view.ThemeItemView
                 android:id="@+id/dark_theme"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -94,7 +94,7 @@
                 android:layout_height="@dimen/nav_menu_divider_width"
                 android:background="?attr/scDividerColor" />
 
-            <com.kenkeremath.mtgcounter.view.ThemeItemView
+            <com.intagri.mtgleader.view.ThemeItemView
                 android:id="@+id/mox_emerald_theme"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -106,7 +106,7 @@
                 android:layout_height="@dimen/nav_menu_divider_width"
                 android:background="?attr/scDividerColor" />
 
-            <com.kenkeremath.mtgcounter.view.ThemeItemView
+            <com.intagri.mtgleader.view.ThemeItemView
                 android:id="@+id/lotus_petal_theme"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -118,7 +118,7 @@
                 android:layout_height="@dimen/nav_menu_divider_width"
                 android:background="?attr/scDividerColor" />
 
-            <com.kenkeremath.mtgcounter.view.ThemeItemView
+            <com.intagri.mtgleader.view.ThemeItemView
                 android:id="@+id/aether_hub_theme"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
