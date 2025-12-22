@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.intagri.mtgleader">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:name=".MTGLeaderboardApplication"
+        android:name="com.intagri.mtgleader.MTGLeaderboardApplication"
         android:allowBackup="false"
         android:icon="@drawable/ic_skull"
         android:label="@string/app_name"
