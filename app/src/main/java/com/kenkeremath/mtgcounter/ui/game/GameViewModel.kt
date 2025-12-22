@@ -13,6 +13,7 @@ import com.kenkeremath.mtgcounter.view.counter.edit.RearrangeCounterUiModel
 import com.kenkeremath.mtgcounter.view.TableLayoutPosition
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.lang.IllegalArgumentException
+import java.util.ArrayDeque
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -73,6 +74,7 @@ class GameViewModel @Inject constructor(
 
     private var startingPlayerId: Int? = null
     private var startingPlayerSelectionEnabled = false
+    private val turnHistory = ArrayDeque<TurnHistoryEntry>()
     private val playerOrderIds = setupPlayers.map { it.id }
     private val clockwiseTurnPositions = listOf(
         TableLayoutPosition.TOP_PANEL,
@@ -173,6 +175,7 @@ class GameViewModel @Inject constructor(
         startingPlayerId = playerId
         startingPlayerSelectionEnabled = false
         _currentTurnPlayerId.value = playerId
+        turnHistory.clear()
         resetTurnTimer()
         updatePlayerState()
     }
@@ -186,6 +189,7 @@ class GameViewModel @Inject constructor(
             startingPlayerId = playerIds.random()
             startingPlayerSelectionEnabled = false
             _currentTurnPlayerId.value = startingPlayerId
+            turnHistory.clear()
             resetTurnTimer()
             updatePlayerState()
         }
@@ -442,9 +446,25 @@ class GameViewModel @Inject constructor(
         }
         val nextIndex = (currentIndex + 1) % order.size
         val nextPlayerId = order[nextIndex]
+        val incrementedTurn = startingPlayerId != null && nextPlayerId == startingPlayerId
+        turnHistory.addLast(TurnHistoryEntry(currentId, incrementedTurn))
         _currentTurnPlayerId.value = nextPlayerId
-        if (startingPlayerId != null && nextPlayerId == startingPlayerId) {
+        if (incrementedTurn) {
             _turnCount.value = (_turnCount.value ?: 1) + 1
+        }
+        resetTurnTimer()
+        updatePlayerState()
+    }
+
+    fun goBackTurn() {
+        if (turnHistory.isEmpty()) {
+            return
+        }
+        val entry = turnHistory.removeLast()
+        _currentTurnPlayerId.value = entry.previousPlayerId
+        if (entry.incrementedTurn) {
+            val currentCount = _turnCount.value ?: 1
+            _turnCount.value = maxOf(1, currentCount - 1)
         }
         resetTurnTimer()
         updatePlayerState()
@@ -478,11 +498,17 @@ class GameViewModel @Inject constructor(
     fun resetGame() {
         startingPlayerId = null
         startingPlayerSelectionEnabled = false
+        turnHistory.clear()
         _currentTurnPlayerId.value = null
         _turnCount.value = 1
         resetTurnTimer()
         initializePlayers()
     }
+
+    private data class TurnHistoryEntry(
+        val previousPlayerId: Int,
+        val incrementedTurn: Boolean,
+    )
 
     private fun resetTurnTimer() {
         val durationSeconds = _turnTimerDurationSeconds.value ?: DEFAULT_TURN_TIMER_SECONDS

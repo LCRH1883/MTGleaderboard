@@ -16,6 +16,7 @@ import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.ArrayAdapter
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
@@ -652,11 +653,44 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         viewModel.endTurn(playerId)
     }
 
+    override fun onEndTurnUndoRequested(playerId: Int) {
+        val currentId = viewModel.currentTurnPlayerId.value ?: return
+        if (currentId != playerId) {
+            return
+        }
+        openGoBackTurnMenu()
+    }
+
+    private fun openGoBackTurnMenu() {
+        val items = arrayOf(getString(R.string.go_back_turn))
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(R.string.turn_options)
+            .setAdapter(GoBackTurnAdapter(this, items)) { _, _ ->
+                viewModel.goBackTurn()
+            }
+            .setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.dismiss() }
+
+        dialog.show()
+    }
+
     override fun onOpenExitPrompt() {
         openExitPrompt()
     }
 
     override fun onOpenResetPrompt() {
         openResetPrompt()
+    }
+
+    private class GoBackTurnAdapter(
+        context: Context,
+        items: Array<String>,
+    ) : ArrayAdapter<String>(context, android.R.layout.simple_list_item_1, items) {
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+            val view = super.getView(position, convertView, parent)
+            val textView = view.findViewById<TextView>(android.R.id.text1)
+            val color = ScThemeUtils.resolveThemeColor(context, R.attr.scTextColorPrimary)
+            textView.setTextColor(color)
+            return view
+        }
     }
 }
