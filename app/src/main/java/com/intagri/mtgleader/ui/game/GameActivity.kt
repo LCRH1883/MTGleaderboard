@@ -96,6 +96,8 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         toolbar.title = ScThemeUtils.resolveThemedTitle(this, datastore.theme)
 
         gameContainer = findViewById(R.id.game_container)
+        gameContainer.clipChildren = false
+        gameContainer.clipToPadding = false
 
         tabletopContainer = findViewById(R.id.tabletop_container)
         tabletopLayout = findViewById(R.id.tabletop_layout)
@@ -232,6 +234,10 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 )
                 circleContainer.clipToPadding = false
                 circleContainer.clipChildren = false
+                circleContainer.background = ContextCompat.getDrawable(
+                    this@GameActivity,
+                    R.drawable.game_button_container_bg
+                )
 
                 val menuButton = ImageView(this@GameActivity)
                 menuButton.setImageResource(R.drawable.ic_skull)
@@ -299,10 +305,6 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                     }
                     TabletopType.ONE_VERTICAL -> {
                         //Top left
-                        circleContainer.background = ContextCompat.getDrawable(
-                            this@GameActivity,
-                            R.drawable.game_button_container_bg
-                        )
                         centerX = containerPadding + containerSize / 2
                         centerY = containerPadding + containerSize / 2
                     }
@@ -310,10 +312,6 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                         //Top right (appears as top left)
                         centerX = tabletopLayout.width - containerPadding - containerSize / 2
                         centerY = containerPadding + containerSize / 2
-                        circleContainer.background = ContextCompat.getDrawable(
-                            this@GameActivity,
-                            R.drawable.game_button_container_bg
-                        )
                     }
                     TabletopType.FOUR_ACROSS,
                     TabletopType.SIX_CIRCLE,
@@ -321,10 +319,6 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                         //Center in screen
                         centerX = tabletopLayout.width / 2
                         centerY = tabletopLayout.height / 2
-                        circleContainer.background = ContextCompat.getDrawable(
-                            this@GameActivity,
-                            R.drawable.game_button_container_bg
-                        )
                     }
                     TabletopType.TWO_HORIZONTAL,
                     TabletopType.FIVE_ACROSS,
@@ -332,19 +326,11 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                         //Center top (appears as center left)
                         centerX = tabletopLayout.width / 2
                         centerY = containerSize / 2
-                        circleContainer.background = ContextCompat.getDrawable(
-                            this@GameActivity,
-                            R.drawable.game_button_container_side_bg
-                        )
                     }
                     TabletopType.TWO_VERTICAL -> {
                         //Center left
                         centerX = containerSize / 2
                         centerY = tabletopLayout.height / 2
-                        circleContainer.background = ContextCompat.getDrawable(
-                            this@GameActivity,
-                            R.drawable.game_button_container_side_bg
-                        )
                     }
                     TabletopType.FOUR_CIRCLE -> {
                         //Center offset from topmost (appears leftmost) intersection so no center portion of player is cut off
@@ -352,19 +338,11 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                         centerY =
                             tabletopLayout.panels[TableLayoutPosition.TOP_PANEL]!!.height +
                                 containerSize / 2
-                        circleContainer.background = ContextCompat.getDrawable(
-                            this@GameActivity,
-                            R.drawable.game_button_container_side_bg
-                        )
                     }
                     TabletopType.SIX_ACROSS -> {
                         //Center in topmost (appears leftmost) intersection
                         centerX = tabletopLayout.width / 2
                         centerY = tabletopLayout.panels[TableLayoutPosition.LEFT_PANEL_1]!!.height
-                        circleContainer.background = ContextCompat.getDrawable(
-                            this@GameActivity,
-                            R.drawable.game_button_container_bg
-                        )
                     }
                     TabletopType.FIVE_CIRCLE -> {
                         //Center in bottom (appears rightmost) intersection
@@ -372,19 +350,11 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                         centerY =
                             tabletopLayout.height -
                                 tabletopLayout.panels[TableLayoutPosition.LEFT_PANEL_1]!!.height
-                        circleContainer.background = ContextCompat.getDrawable(
-                            this@GameActivity,
-                            R.drawable.game_button_container_bg
-                        )
                     }
                     TabletopType.THREE_CIRCLE -> {
                         //Center in intersection
                         centerX = tabletopLayout.width / 2
                         centerY = tabletopLayout.panels[TableLayoutPosition.TOP_PANEL]!!.height
-                        circleContainer.background = ContextCompat.getDrawable(
-                            this@GameActivity,
-                            R.drawable.game_button_container_bg
-                        )
                     }
                 }
                 val shouldAlignToIntersection =
@@ -454,30 +424,70 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         if (visiblePanels.isEmpty()) {
             return null
         }
-        val xCandidates = mutableSetOf<Int>()
-        val yCandidates = mutableSetOf<Int>()
-        for (panel in visiblePanels) {
-            if (panel.left in 1 until width) {
-                xCandidates.add(panel.left)
-            }
-            if (panel.right in 1 until width) {
-                xCandidates.add(panel.right)
-            }
-            if (panel.top in 1 until height) {
-                yCandidates.add(panel.top)
-            }
-            if (panel.bottom in 1 until height) {
-                yCandidates.add(panel.bottom)
+        val tolerance = maxOf(
+            1,
+            resources.getDimensionPixelSize(R.dimen.player_divider_width)
+        )
+        data class VerticalLine(val x: Int, val top: Int, val bottom: Int)
+        data class HorizontalLine(val y: Int, val left: Int, val right: Int)
+        val verticalLines = mutableListOf<VerticalLine>()
+        val horizontalLines = mutableListOf<HorizontalLine>()
+        for (i in 0 until visiblePanels.size) {
+            val panelA = visiblePanels[i]
+            for (j in i + 1 until visiblePanels.size) {
+                val panelB = visiblePanels[j]
+                val verticalX = when {
+                    abs(panelA.right - panelB.left) <= tolerance -> (panelA.right + panelB.left) / 2
+                    abs(panelB.right - panelA.left) <= tolerance -> (panelB.right + panelA.left) / 2
+                    else -> null
+                }
+                if (verticalX != null) {
+                    val top = maxOf(panelA.top, panelB.top)
+                    val bottom = minOf(panelA.bottom, panelB.bottom)
+                    if (bottom - top > tolerance) {
+                        verticalLines.add(VerticalLine(verticalX, top, bottom))
+                    }
+                }
+                val horizontalY = when {
+                    abs(panelA.bottom - panelB.top) <= tolerance -> (panelA.bottom + panelB.top) / 2
+                    abs(panelB.bottom - panelA.top) <= tolerance -> (panelB.bottom + panelA.top) / 2
+                    else -> null
+                }
+                if (horizontalY != null) {
+                    val left = maxOf(panelA.left, panelB.left)
+                    val right = minOf(panelA.right, panelB.right)
+                    if (right - left > tolerance) {
+                        horizontalLines.add(HorizontalLine(horizontalY, left, right))
+                    }
+                }
             }
         }
-        if (xCandidates.isEmpty() || yCandidates.isEmpty()) {
+        if (verticalLines.isEmpty() || horizontalLines.isEmpty()) {
             return null
         }
-        val centerX = width / 2f
-        val centerY = height / 2f
-        val x = xCandidates.minByOrNull { abs(it - centerX) } ?: return null
-        val y = yCandidates.minByOrNull { abs(it - centerY) } ?: return null
-        return x to y
+        val centerX = width / 2.0
+        val centerY = height / 2.0
+        var bestPoint: Pair<Int, Int>? = null
+        var bestDistance = Double.MAX_VALUE
+        for (vertical in verticalLines) {
+            for (horizontal in horizontalLines) {
+                val withinX =
+                    vertical.x in (horizontal.left - tolerance)..(horizontal.right + tolerance)
+                val withinY =
+                    horizontal.y in (vertical.top - tolerance)..(vertical.bottom + tolerance)
+                if (!withinX || !withinY) {
+                    continue
+                }
+                val dx = vertical.x.toDouble() - centerX
+                val dy = horizontal.y.toDouble() - centerY
+                val distance = dx * dx + dy * dy
+                if (distance < bestDistance) {
+                    bestDistance = distance
+                    bestPoint = vertical.x to horizontal.y
+                }
+            }
+        }
+        return bestPoint
     }
 
     private fun updateMenuButtonRotation() {
