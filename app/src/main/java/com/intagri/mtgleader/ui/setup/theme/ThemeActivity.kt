@@ -2,11 +2,6 @@ package com.intagri.mtgleader.ui.setup.theme
 
 import android.content.Intent
 import android.os.Bundle
-import android.text.Spannable
-import android.text.SpannableString
-import android.text.style.BackgroundColorSpan
-import android.text.style.ForegroundColorSpan
-import androidx.core.content.ContextCompat
 import com.intagri.mtgleader.R
 import com.intagri.mtgleader.databinding.ActivityThemeBinding
 import com.intagri.mtgleader.ui.BaseActivity
@@ -34,70 +29,25 @@ class ThemeActivity : BaseActivity() {
         val initialTheme = datastore.theme
         themeChanged = savedInstanceState?.getBoolean(STATE_THEME_CHANGED, false) ?: false
 
-        binding.lightTheme.tag = SpellCounterTheme.LIGHT
-        binding.darkTheme.tag = SpellCounterTheme.DARK
-        binding.moxEmeraldTheme.tag = SpellCounterTheme.MOX_EMERALD
-        binding.lotusPetalTheme.tag = SpellCounterTheme.LOTUS_PETAL
-        binding.aetherHubTheme.tag = SpellCounterTheme.AETHERHUB
-        binding.pinkTheme.tag = SpellCounterTheme.PINK
-        binding.karnTheme.tag = SpellCounterTheme.KARN
-
-        val themeViews = listOf(
-            binding.lightTheme,
-            binding.darkTheme,
-            binding.moxEmeraldTheme,
-            binding.lotusPetalTheme,
-            binding.aetherHubTheme,
-            binding.pinkTheme,
-            binding.karnTheme,
-        )
-
-        for (themeView in themeViews) {
-            val theme = themeView.tag
-            if (theme is SpellCounterTheme) {
-
-                //Special case
-                if (theme == SpellCounterTheme.AETHERHUB) {
-                    val spannable = SpannableString(themeView.label)
-                    val spanSection = "hub"
-                    val startIndex = spannable.indexOf(spanSection)
-                    if (startIndex != -1) {
-                        spannable.setSpan(
-                            BackgroundColorSpan(
-                                ContextCompat.getColor(
-                                    this,
-                                    R.color.aether_hub_primary
-                                )
-                            ),
-                            startIndex,
-                            startIndex + spanSection.length,
-                            Spannable.SPAN_INCLUSIVE_EXCLUSIVE
-                        )
-                        spannable.setSpan(
-                            ForegroundColorSpan(
-                                ContextCompat.getColor(
-                                    this,
-                                    R.color.dark_mode_black
-                                )
-                            ),
-                            startIndex,
-                            startIndex + spanSection.length,
-                            Spannable.SPAN_INCLUSIVE_EXCLUSIVE
-                        )
-                        themeView.label = spannable
-                    }
-                }
-                //End special case
-
-                val resolvedTheme = ScThemeUtils.resolveTheme(this, datastore.theme)
-                themeView.isSelected = theme == resolvedTheme
-                themeView.setOnClickListener {
-                    if (theme != resolvedTheme) {
-                        datastore.theme = theme
-                        themeChanged = theme != initialTheme
-                        recreate()
-                    }
-                }
+        val resolvedTheme = ScThemeUtils.resolveTheme(this, datastore.theme)
+        binding.themeToggle.setOnCheckedChangeListener(null)
+        binding.themeToggle.isChecked = resolvedTheme == SpellCounterTheme.DARK
+        binding.themeToggle.text = if (binding.themeToggle.isChecked) {
+            getString(R.string.theme_dark)
+        } else {
+            getString(R.string.theme_karn)
+        }
+        binding.themeToggle.setOnCheckedChangeListener { _, isChecked ->
+            val theme = if (isChecked) SpellCounterTheme.DARK else SpellCounterTheme.KARN
+            binding.themeToggle.text = if (isChecked) {
+                getString(R.string.theme_dark)
+            } else {
+                getString(R.string.theme_karn)
+            }
+            if (theme != resolvedTheme) {
+                datastore.theme = theme
+                themeChanged = theme != initialTheme
+                recreate()
             }
         }
     }

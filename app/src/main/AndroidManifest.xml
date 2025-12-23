@@ -11,7 +11,7 @@
         android:label="@string/app_name"
         android:roundIcon="@drawable/ic_skull"
         android:supportsRtl="true"
-        android:theme="@style/LightTheme">
+        android:theme="@style/Karn">
         <activity
             android:name=".ui.SplashActivity"
             android:theme="@style/SplashTheme"

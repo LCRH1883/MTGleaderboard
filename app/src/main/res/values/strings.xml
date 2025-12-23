@@ -52,16 +52,9 @@
     <string name="themes">Themes</string>
 
     <!-- Themes -->
-    <string name="themes_light">Light Themes</string>
-    <string name="themes_dark">Dark Themes</string>
-    <string name="theme_light">Sky Diamond</string>
-    <string name="theme_dark">Dimir</string>
-    <string name="theme_mox_emerald">Mox Emerald</string>
-    <string name="theme_tolaria">Tolaria</string>
-    <string name="theme_lotus_petal">Lotus Petal</string>
-    <string name="theme_aetherhub">Aetherhub®</string>
-    <string name="theme_pink">Carpet of Flowers</string>
-    <string name="theme_karn">Karn</string>
+    <string name="theme_label">Theme</string>
+    <string name="theme_dark">Dark Theme</string>
+    <string name="theme_karn">Light Theme</string>
 
     <!-- Edit Profile -->
     <string name="profile_name_label">Profile Name:</string>
