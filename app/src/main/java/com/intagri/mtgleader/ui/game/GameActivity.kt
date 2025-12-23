@@ -34,6 +34,7 @@ import com.intagri.mtgleader.ui.game.options.GameOptionsDialogFragment
 import com.intagri.mtgleader.ui.game.rv.GamePlayerRecyclerAdapter
 import com.intagri.mtgleader.ui.game.tabletop.GameTabletopLayoutAdapter
 import com.intagri.mtgleader.ui.setup.theme.ScThemeUtils
+import com.intagri.mtgleader.view.CircularTouchFrameLayout
 import com.intagri.mtgleader.view.TableLayoutPosition
 import com.intagri.mtgleader.view.TabletopLayout
 import com.intagri.mtgleader.view.counter.edit.PlayerMenuListener
@@ -172,7 +173,7 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
             ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {
                 tabletopLayout.viewTreeObserver.removeOnPreDrawListener(this)
-                val container = FrameLayout(this@GameActivity)
+                val container = CircularTouchFrameLayout(this@GameActivity)
                 val containerSize =
                     resources.getDimensionPixelSize(R.dimen.game_menu_button_container_diameter)
                 val timerGap =
@@ -193,8 +194,8 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                     hypot((groupWidth - pivotX).toDouble(), (groupHeight - pivotY).toDouble())
                 ).maxOrNull() ?: (containerSize / 2.0)
                 val rotatingSize = ceil(maxDist * 2.0).toInt()
-                val containerWidth = rotatingSize
-                val containerHeight = rotatingSize
+                val containerWidth = containerSize
+                val containerHeight = containerSize
                 val containerLp = FrameLayout.LayoutParams(
                     containerWidth,
                     containerHeight,
@@ -203,10 +204,13 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 container.clipToPadding = false
 
                 val rotatingContainer = FrameLayout(this@GameActivity)
-                rotatingContainer.layoutParams = FrameLayout.LayoutParams(
-                    containerWidth,
-                    containerHeight
+                val rotatingContainerLp = FrameLayout.LayoutParams(
+                    rotatingSize,
+                    rotatingSize
                 )
+                rotatingContainerLp.leftMargin = (containerSize / 2f - rotatingSize / 2f).roundToInt()
+                rotatingContainerLp.topMargin = (containerSize / 2f - rotatingSize / 2f).roundToInt()
+                rotatingContainer.layoutParams = rotatingContainerLp
                 rotatingContainer.pivotX = rotatingSize / 2f
                 rotatingContainer.pivotY = rotatingSize / 2f
                 rotatingContainer.clipChildren = false
@@ -406,9 +410,6 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 )
                 circleContainer.isClickable = true
                 circleContainer.setOnClickListener {
-                    openGameMenu()
-                }
-                rotatingContainer.setOnClickListener {
                     openGameMenu()
                 }
                 menuButtonContainer = container
