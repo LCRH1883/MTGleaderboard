@@ -50,6 +50,9 @@
     <string name="manage_counters">Custom Counters</string>
     <string name="create_counter">Create Counter</string>
     <string name="themes">Themes</string>
+    <string name="about_app">About App</string>
+    <string name="version_label">Version %1$s</string>
+    <string name="about_description">MTG Leader Board is a Magic: The Gathering life counter for tabletop games.</string>
 
     <!-- Themes -->
     <string name="theme_label">Theme</string>

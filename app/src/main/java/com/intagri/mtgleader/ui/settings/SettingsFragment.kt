@@ -5,8 +5,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
+import com.intagri.mtgleader.BuildConfig
 import com.intagri.mtgleader.R
 import com.intagri.mtgleader.ui.settings.counters.manage.ManageCountersFragment
 import com.intagri.mtgleader.ui.settings.profiles.manage.ManageProfilesFragment
@@ -39,6 +41,9 @@ class SettingsFragment: Fragment() {
         val manageProfiles: View = view.findViewById(R.id.manage_profiles)
         val manageCounters: View = view.findViewById(R.id.manage_counters)
         val themes: View = view.findViewById(R.id.themes)
+        val about: View = view.findViewById(R.id.about)
+        val versionText: TextView = view.findViewById(R.id.version_text)
+        versionText.text = getString(R.string.version_label, BuildConfig.VERSION_NAME)
         manageProfiles.setOnClickListener {
             val f = ManageProfilesFragment.newInstance()
             requireActivity().supportFragmentManager.beginTransaction()
@@ -55,6 +60,13 @@ class SettingsFragment: Fragment() {
         }
         themes.setOnClickListener {
             startActivity(Intent(requireContext(), ThemeActivity::class.java))
+        }
+        about.setOnClickListener {
+            val f = AboutFragment.newInstance()
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.container, f)
+                .addToBackStack(AboutFragment.TAG)
+                .commit()
         }
         return view
     }

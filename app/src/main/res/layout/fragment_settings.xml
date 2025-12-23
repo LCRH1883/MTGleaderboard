@@ -80,4 +80,36 @@
         android:layout_width="match_parent"
         android:layout_height="@dimen/nav_menu_divider_width"
         android:background="?attr/scDividerColor" />
+
+    <FrameLayout
+        android:id="@+id/about"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:foreground="?attr/selectableItemBackground"
+        android:padding="@dimen/default_padding">
+
+        <TextView
+            style="@style/NavMenuText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/about_app"
+            app:drawableStartCompat="@drawable/ic_skull"
+            app:drawableEndCompat="@drawable/ic_chevron_right" />
+
+    </FrameLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/nav_menu_divider_width"
+        android:background="?attr/scDividerColor" />
+
+    <TextView
+        android:id="@+id/version_text"
+        style="@style/Label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:padding="@dimen/default_padding"
+        android:text=""
+        tools:text="Version v00.02.000" />
 </LinearLayout>

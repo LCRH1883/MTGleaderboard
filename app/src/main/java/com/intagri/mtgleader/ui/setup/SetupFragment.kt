@@ -102,10 +102,12 @@ class SetupFragment : Fragment(), CompoundButton.OnCheckedChangeListener {
 
         lifeButtons = listOf(
             view.findViewById(R.id.twenty_life_button),
+            view.findViewById(R.id.thirty_life_button),
             view.findViewById(R.id.forty_life_button)
         )
         lifeButtons[0].tag = 20
-        lifeButtons[1].tag = 40
+        lifeButtons[1].tag = 30
+        lifeButtons[2].tag = 40
         for (lifeButton in lifeButtons) {
             lifeButton.setOnClickListener { viewModel.setStartingLife(lifeButton.tag as Int) }
         }
