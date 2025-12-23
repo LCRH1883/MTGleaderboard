@@ -40,6 +40,7 @@ import com.intagri.mtgleader.view.TabletopLayout
 import com.intagri.mtgleader.view.counter.edit.PlayerMenuListener
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.hypot
 import kotlin.math.roundToInt
@@ -386,7 +387,24 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                         )
                     }
                 }
-                val safeMargin = ceil(maxDist).toInt()
+                val shouldAlignToIntersection =
+                    viewModel.tabletopType != TabletopType.NONE &&
+                        viewModel.tabletopType != TabletopType.LIST &&
+                        viewModel.tabletopType.numberOfPlayers != 2
+                val intersection = if (shouldAlignToIntersection) {
+                    resolveMenuButtonIntersection()
+                } else {
+                    null
+                }
+                if (intersection != null) {
+                    centerX = intersection.first
+                    centerY = intersection.second
+                }
+                val safeMargin = if (intersection != null) {
+                    containerSize / 2
+                } else {
+                    ceil(maxDist).toInt()
+                }
                 val maxCenterX = tabletopLayout.width - safeMargin
                 centerX = if (safeMargin <= maxCenterX) {
                     centerX.coerceIn(safeMargin, maxCenterX)
@@ -424,6 +442,42 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 return false
             }
         })
+    }
+
+    private fun resolveMenuButtonIntersection(): Pair<Int, Int>? {
+        val width = tabletopLayout.width
+        val height = tabletopLayout.height
+        if (width == 0 || height == 0) {
+            return null
+        }
+        val visiblePanels = tabletopLayout.panels.values.filter { it.visibility == View.VISIBLE }
+        if (visiblePanels.isEmpty()) {
+            return null
+        }
+        val xCandidates = mutableSetOf<Int>()
+        val yCandidates = mutableSetOf<Int>()
+        for (panel in visiblePanels) {
+            if (panel.left in 1 until width) {
+                xCandidates.add(panel.left)
+            }
+            if (panel.right in 1 until width) {
+                xCandidates.add(panel.right)
+            }
+            if (panel.top in 1 until height) {
+                yCandidates.add(panel.top)
+            }
+            if (panel.bottom in 1 until height) {
+                yCandidates.add(panel.bottom)
+            }
+        }
+        if (xCandidates.isEmpty() || yCandidates.isEmpty()) {
+            return null
+        }
+        val centerX = width / 2f
+        val centerY = height / 2f
+        val x = xCandidates.minByOrNull { abs(it - centerX) } ?: return null
+        val y = yCandidates.minByOrNull { abs(it - centerY) } ?: return null
+        return x to y
     }
 
     private fun updateMenuButtonRotation() {
