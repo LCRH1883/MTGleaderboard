@@ -3,55 +3,16 @@ package com.intagri.mtgleader.ui.setup.theme
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.drawable.Drawable
-import android.text.Spannable
-import android.text.SpannableString
-import android.text.style.BackgroundColorSpan
-import android.text.style.ForegroundColorSpan
 import android.util.TypedValue
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
-import androidx.annotation.ColorRes
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import com.intagri.mtgleader.R
 
 object ScThemeUtils {
     fun resolveThemedTitle(context: Context, theme: SpellCounterTheme): CharSequence {
-        val appName = context.getString(R.string.app_name)
-        return if (theme != SpellCounterTheme.AETHERHUB) {
-            appName
-        } else {
-            val spannable = SpannableString(appName)
-            val spanSection = "Counter"
-            val startIndex = spannable.indexOf(spanSection)
-            if (startIndex == -1) {
-                appName
-            } else {
-                spannable.setSpan(
-                    BackgroundColorSpan(
-                        ContextCompat.getColor(
-                            context,
-                            R.color.aether_hub_primary
-                        )
-                    ),
-                    startIndex,
-                    startIndex + spanSection.length,
-                    Spannable.SPAN_INCLUSIVE_EXCLUSIVE
-                )
-                spannable.setSpan(
-                    ForegroundColorSpan(
-                        ContextCompat.getColor(
-                            context,
-                            R.color.dark_mode_black
-                        )
-                    ),
-                    startIndex,
-                    startIndex + spanSection.length,
-                    Spannable.SPAN_INCLUSIVE_EXCLUSIVE
-                )
-                spannable
-            }
-        }
+        return context.getString(R.string.app_name)
     }
 
     fun resolveTheme(context: Context, theme: SpellCounterTheme): SpellCounterTheme {
@@ -63,10 +24,10 @@ object ScThemeUtils {
                     SpellCounterTheme.DARK
                 }
                 Configuration.UI_MODE_NIGHT_NO -> {
-                    SpellCounterTheme.LIGHT
+                    SpellCounterTheme.KARN
                 }
                 else -> {
-                    SpellCounterTheme.LIGHT
+                    SpellCounterTheme.KARN
                 }
             }
         }

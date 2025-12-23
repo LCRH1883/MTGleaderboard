@@ -201,7 +201,7 @@ class MigrationHelperTest {
         migrationHelper.performMigration().collect { }
 
         assertEquals(Datastore.CURRENT_VERSION, datastore.version)
-        assertEquals(SpellCounterTheme.LOTUS_PETAL, datastore.theme)
+        assertEquals(SpellCounterTheme.DARK, datastore.theme)
     }
 
     @Test

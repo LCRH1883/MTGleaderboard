@@ -23,107 +23,35 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <TextView
-                style="@style/Header3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="32dp"
-                android:layout_marginBottom="8dp"
-                android:text="@string/themes_light" />
-
             <View
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/nav_menu_divider_width"
                 android:background="?attr/scDividerColor" />
 
-            <com.intagri.mtgleader.view.ThemeItemView
-                android:id="@+id/light_theme"
+            <LinearLayout
+                android:id="@+id/theme_toggle_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:label="@string/theme_light"
-                app:scTheme="@style/LightTheme" />
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/default_padding"
+                android:paddingVertical="@dimen/default_padding">
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/nav_menu_divider_width"
-                android:background="?attr/scDividerColor" />
+                <TextView
+                    style="@style/Header3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/theme_label"
+                    android:textColor="?attr/scTextColorPrimary" />
 
-            <com.intagri.mtgleader.view.ThemeItemView
-                android:id="@+id/pink_theme"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:label="@string/theme_pink"
-                app:scTheme="@style/PinkTheme" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/nav_menu_divider_width"
-                android:background="?attr/scDividerColor" />
-
-            <com.intagri.mtgleader.view.ThemeItemView
-                android:id="@+id/karn_theme"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:label="@string/theme_karn"
-                app:scTheme="@style/Karn" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/nav_menu_divider_width"
-                android:background="?attr/scDividerColor" />
-
-            <TextView
-                style="@style/Header3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="32dp"
-                android:layout_marginBottom="8dp"
-                android:text="@string/themes_dark" />
-
-            <com.intagri.mtgleader.view.ThemeItemView
-                android:id="@+id/dark_theme"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:label="@string/theme_dark"
-                app:scTheme="@style/DarkTheme" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/nav_menu_divider_width"
-                android:background="?attr/scDividerColor" />
-
-            <com.intagri.mtgleader.view.ThemeItemView
-                android:id="@+id/mox_emerald_theme"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:label="@string/theme_mox_emerald"
-                app:scTheme="@style/MoxEmerald" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/nav_menu_divider_width"
-                android:background="?attr/scDividerColor" />
-
-            <com.intagri.mtgleader.view.ThemeItemView
-                android:id="@+id/lotus_petal_theme"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:label="@string/theme_lotus_petal"
-                app:scTheme="@style/LotusPetal" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/nav_menu_divider_width"
-                android:background="?attr/scDividerColor" />
-
-            <com.intagri.mtgleader.view.ThemeItemView
-                android:id="@+id/aether_hub_theme"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:label="@string/theme_aetherhub"
-                app:scTheme="@style/Aetherhub" />
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/theme_toggle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/theme_karn"
+                    android:textColor="?attr/scTextColorPrimary" />
+            </LinearLayout>
 
             <View
                 android:layout_width="match_parent"

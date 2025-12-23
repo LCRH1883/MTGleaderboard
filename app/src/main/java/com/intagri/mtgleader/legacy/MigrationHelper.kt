@@ -43,9 +43,9 @@ class MigrationHelper(
     //For converting old themes prior to v3.0 (saved as Strings) to v3 themes
     private val legacyThemeMapping: Map<String, SpellCounterTheme> = mapOf(
         "GREY" to SpellCounterTheme.DARK,
-        "PURPLE" to SpellCounterTheme.LOTUS_PETAL,
+        "PURPLE" to SpellCounterTheme.DARK,
         "DARK_BLUE" to SpellCounterTheme.DARK,
-        "DARK_GREEN" to SpellCounterTheme.MOX_EMERALD
+        "DARK_GREEN" to SpellCounterTheme.DARK
     )
 
     val needsMigration: Boolean

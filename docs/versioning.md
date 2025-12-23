@@ -18,5 +18,5 @@ Example: `v1.3.1` -> `0103001`.
 
 ## Current Version
 
-- Version name: `v00.01.00`
-- Version number: `0001000`
+- Version name: `v00.01.001`
+- Version number: `0001001`

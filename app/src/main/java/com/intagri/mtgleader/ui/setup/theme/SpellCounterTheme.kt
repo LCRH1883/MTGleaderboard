@@ -9,42 +9,26 @@ enum class SpellCounterTheme(
 ) {
     NOT_SET(
         id = 0L,
-        resId = R.style.LightTheme,
-    ),
-    LIGHT(
-        id = 1L,
-        resId = R.style.LightTheme,
+        resId = R.style.Karn
     ),
     DARK(
         id = 2L,
         resId = R.style.DarkTheme,
     ),
-    MOX_EMERALD(
-        id = 3L,
-        resId = R.style.MoxEmerald,
-    ),
-    LOTUS_PETAL(
-        id = 5L,
-        resId = R.style.LotusPetal,
-    ),
-    AETHERHUB(
-        id = 6L,
-        resId = R.style.Aetherhub
-    ),
-    PINK(
-        id = 7L,
-        resId = R.style.PinkTheme
-    ),
     KARN(
         id = 8L,
-        resId = R.style.Karn
+        resId = R.style.Karn,
     );
 
     companion object {
         fun fromId(id: Long): SpellCounterTheme {
-            return values().find {
-                it.id == id
-            } ?: NOT_SET
+            // Map legacy theme ids to Karn/Dimir so saved selections stay valid.
+            return when (id) {
+                0L -> NOT_SET
+                1L, 7L, 8L -> KARN
+                2L, 3L, 5L, 6L -> DARK
+                else -> NOT_SET
+            }
         }
     }
 }
