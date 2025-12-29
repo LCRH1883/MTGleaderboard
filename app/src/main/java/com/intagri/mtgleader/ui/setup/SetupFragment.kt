@@ -13,16 +13,21 @@ import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.setFragmentResultListener
+import androidx.lifecycle.lifecycleScope
 import com.intagri.mtgleader.R
 import com.intagri.mtgleader.model.TabletopType
 import com.intagri.mtgleader.persistence.Datastore
+import com.intagri.mtgleader.persistence.auth.AuthRepository
+import com.intagri.mtgleader.ui.auth.LoginFragment
 import com.intagri.mtgleader.ui.game.GameActivity
 import com.intagri.mtgleader.ui.settings.SettingsFragment
+import com.intagri.mtgleader.ui.settings.user.UserSettingsFragment
 import com.intagri.mtgleader.ui.setup.tabletop.SetupTabletopFragment
 import com.intagri.mtgleader.ui.setup.theme.ScThemeUtils
 import com.intagri.mtgleader.view.TabletopLayout
 import com.intagri.mtgleader.view.layoutbutton.TabletopLayoutButtonAdapter
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.min
 
@@ -51,6 +56,9 @@ class SetupFragment : Fragment(), CompoundButton.OnCheckedChangeListener {
     @Inject
     lateinit var datastore: Datastore
 
+    @Inject
+    lateinit var authRepository: AuthRepository
+
     private val viewModel: SetupViewModel by activityViewModels()
 
     override fun onCreateView(
@@ -68,6 +76,29 @@ class SetupFragment : Fragment(), CompoundButton.OnCheckedChangeListener {
         toolbar.inflateMenu(R.menu.setup)
         toolbar.setOnMenuItemClickListener {
             when (it.itemId) {
+                R.id.menu_login -> {
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        val user = try {
+                            authRepository.getCurrentUser()
+                        } catch (_: Exception) {
+                            null
+                        }
+                        if (user != null) {
+                            val f = UserSettingsFragment.newInstance()
+                            requireActivity().supportFragmentManager.beginTransaction()
+                                .replace(R.id.container, f)
+                                .addToBackStack(UserSettingsFragment.TAG)
+                                .commit()
+                        } else {
+                            val f = LoginFragment.newInstance()
+                            requireActivity().supportFragmentManager.beginTransaction()
+                                .replace(R.id.container, f)
+                                .addToBackStack(LoginFragment.TAG)
+                                .commit()
+                        }
+                    }
+                    true
+                }
                 R.id.menu_settings -> {
                     val f = SettingsFragment.newInstance()
                     requireActivity().supportFragmentManager.beginTransaction()

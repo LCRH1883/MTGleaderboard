@@ -3,6 +3,7 @@ package com.intagri.mtgleader.ui.game
 import androidx.lifecycle.*
 import com.intagri.mtgleader.R
 import com.intagri.mtgleader.model.TabletopType
+import com.intagri.mtgleader.livedata.SingleLiveEvent
 import com.intagri.mtgleader.model.counter.CounterModel
 import com.intagri.mtgleader.model.counter.CounterTemplateModel
 import com.intagri.mtgleader.model.player.PlayerModel
@@ -28,6 +29,7 @@ class GameViewModel @Inject constructor(
 
     companion object {
         const val DEFAULT_TURN_TIMER_SECONDS = 5 * 60
+        const val MAX_OVERTIME_SECONDS = 99 * 60 + 99
     }
 
     private val setupPlayers =
@@ -62,6 +64,15 @@ class GameViewModel @Inject constructor(
 
     private val _turnTimerSeconds = MutableLiveData<Int>(DEFAULT_TURN_TIMER_SECONDS)
     val turnTimerSeconds: LiveData<Int> = _turnTimerSeconds
+
+    private val _turnTimerOvertime = MutableLiveData<Boolean>(false)
+    val turnTimerOvertime: LiveData<Boolean> = _turnTimerOvertime
+
+    private val _turnTimerAlarmEvent = SingleLiveEvent<Unit>()
+    val turnTimerAlarmEvent: LiveData<Unit> = _turnTimerAlarmEvent
+
+    private val _turnTimerExpiredEvent = SingleLiveEvent<Unit>()
+    val turnTimerExpiredEvent: LiveData<Unit> = _turnTimerExpiredEvent
 
     private val _playerRotationClockwise = MutableLiveData<Boolean>(true)
     val playerRotationClockwise: LiveData<Boolean> = _playerRotationClockwise
@@ -417,6 +428,7 @@ class GameViewModel @Inject constructor(
         if (enabled) {
             resetTurnTimer()
         } else {
+            _turnTimerOvertime.value = false
             stopTurnTimer()
         }
     }
@@ -427,6 +439,7 @@ class GameViewModel @Inject constructor(
         val totalSeconds = clampedMinutes * 60 + clampedSeconds
         _turnTimerDurationSeconds.value = totalSeconds
         _turnTimerSeconds.value = totalSeconds
+        _turnTimerOvertime.value = false
         if (_turnTimerEnabled.value == true && _currentTurnPlayerId.value != null) {
             startTurnTimer()
         } else {
@@ -513,6 +526,7 @@ class GameViewModel @Inject constructor(
     private fun resetTurnTimer() {
         val durationSeconds = _turnTimerDurationSeconds.value ?: DEFAULT_TURN_TIMER_SECONDS
         _turnTimerSeconds.value = durationSeconds
+        _turnTimerOvertime.value = false
         if (_turnTimerEnabled.value == true && _currentTurnPlayerId.value != null) {
             startTurnTimer()
         } else {
@@ -525,10 +539,25 @@ class GameViewModel @Inject constructor(
         turnTimerJob = viewModelScope.launch {
             while (true) {
                 delay(1000L)
+                val isOvertime = _turnTimerOvertime.value == true
+                if (isOvertime) {
+                    val currentSeconds = _turnTimerSeconds.value ?: 0
+                    val nextSeconds = currentSeconds - 1
+                    if (-nextSeconds >= MAX_OVERTIME_SECONDS) {
+                        _turnTimerSeconds.value = -MAX_OVERTIME_SECONDS
+                        _turnTimerExpiredEvent.call()
+                        stopTurnTimer()
+                        return@launch
+                    }
+                    _turnTimerSeconds.value = nextSeconds
+                    continue
+                }
                 val currentSeconds = _turnTimerSeconds.value ?: 0
                 if (currentSeconds <= 0) {
                     _turnTimerSeconds.value = 0
-                    break
+                    _turnTimerOvertime.value = true
+                    _turnTimerAlarmEvent.call()
+                    continue
                 }
                 _turnTimerSeconds.value = currentSeconds - 1
             }

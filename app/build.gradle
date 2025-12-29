@@ -14,6 +14,7 @@ android {
         versionCode 2001
         versionName "v00.02.001"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField "String", "API_BASE_URL", "\"https://mtgleader.xyz/\""
     }
     buildTypes {
         release {
@@ -95,6 +96,8 @@ dependencies {
 
     //Retrofit
     implementation "com.squareup.retrofit2:retrofit:2.11.0"
+    implementation "com.squareup.retrofit2:converter-moshi:2.11.0"
+    implementation "com.squareup.okhttp3:okhttp:4.12.0"
 
     //Misc
     implementation 'com.github.rongi:rotate-layout:v3.0.0'

@@ -9,12 +9,19 @@ MTG Leader Board is a free, open source Magic: The Gathering life and counter tr
 * Add any number of built-in or custom counters
 * Use images, text, emoji, and animated gifs to customize counters
 * Create custom profiles for players or decks
+* Optional sign-in for friends, saved profiles, and persistent stats
 * Dark Mode support and a number of custom themes
 * Dice rolling from within a game
+
+The app is fully usable without signing in.
 
 # Versioning
 
 See `docs/versioning.md` for the version name/number format and current version.
+
+# Backend Auth API
+
+Client integration details for sign-up/sign-in are in `docs/auth-api.md`.
 
 # Play Store Listing
 

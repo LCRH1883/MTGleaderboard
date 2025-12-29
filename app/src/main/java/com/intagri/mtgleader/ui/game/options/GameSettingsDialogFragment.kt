@@ -44,6 +44,7 @@ class GameSettingsDialogFragment : DialogFragment(), CompoundButton.OnCheckedCha
     private lateinit var keepScreenAwakeCheckbox: CheckBox
     private lateinit var hideNavigationCheckbox: CheckBox
     private var updatingTimerInputs = false
+    private var isEditingTimerInputs = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -69,6 +70,15 @@ class GameSettingsDialogFragment : DialogFragment(), CompoundButton.OnCheckedCha
         turnTimerMinutesInput = view.findViewById(R.id.turn_timer_minutes_input)
         turnTimerSecondsInput = view.findViewById(R.id.turn_timer_seconds_input)
         turnTimerColon = view.findViewById(R.id.turn_timer_colon)
+        val timerFocusListener = View.OnFocusChangeListener { _, _ ->
+            isEditingTimerInputs =
+                turnTimerMinutesInput.hasFocus() || turnTimerSecondsInput.hasFocus()
+            if (!isEditingTimerInputs) {
+                viewModel.turnTimerDurationSeconds.value?.let { renderTurnTimerInputs(it) }
+            }
+        }
+        turnTimerMinutesInput.onFocusChangeListener = timerFocusListener
+        turnTimerSecondsInput.onFocusChangeListener = timerFocusListener
 
         keepScreenAwakeCheckbox = view.findViewById(R.id.keep_screen_awake_checkbox)
         keepScreenAwakeCheckbox.setOnCheckedChangeListener(this)
@@ -122,14 +132,10 @@ class GameSettingsDialogFragment : DialogFragment(), CompoundButton.OnCheckedCha
         }
 
         viewModel.turnTimerDurationSeconds.observe(viewLifecycleOwner) { totalSeconds ->
-            val safeSeconds = totalSeconds
-            val minutes = safeSeconds / 60
-            val seconds = safeSeconds % 60
-            val formattedSeconds = String.format(Locale.US, "%02d", seconds)
-            updatingTimerInputs = true
-            turnTimerMinutesInput.setText(minutes.toString())
-            turnTimerSecondsInput.setText(formattedSeconds)
-            updatingTimerInputs = false
+            if (isEditingTimerInputs) {
+                return@observe
+            }
+            renderTurnTimerInputs(totalSeconds)
         }
 
         viewModel.keepScreenOn.observe(viewLifecycleOwner) {
@@ -155,6 +161,17 @@ class GameSettingsDialogFragment : DialogFragment(), CompoundButton.OnCheckedCha
                 hideNavigationCheckbox.setOnCheckedChangeListener(this)
             }
         }
+    }
+
+    private fun renderTurnTimerInputs(totalSeconds: Int) {
+        val safeSeconds = totalSeconds
+        val minutes = safeSeconds / 60
+        val seconds = safeSeconds % 60
+        val formattedSeconds = String.format(Locale.US, "%02d", seconds)
+        updatingTimerInputs = true
+        turnTimerMinutesInput.setText(minutes.toString())
+        turnTimerSecondsInput.setText(formattedSeconds)
+        updatingTimerInputs = false
     }
 
     override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {

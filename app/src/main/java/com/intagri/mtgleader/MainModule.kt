@@ -5,6 +5,11 @@ import androidx.room.Room
 import com.intagri.mtgleader.legacy.LegacyDatastore
 import com.intagri.mtgleader.legacy.MigrationHelper
 import com.intagri.mtgleader.persistence.*
+import com.intagri.mtgleader.persistence.auth.AuthApi
+import com.intagri.mtgleader.persistence.auth.AuthRepository
+import com.intagri.mtgleader.persistence.auth.PersistentCookieJar
+import com.intagri.mtgleader.persistence.friends.FriendsApi
+import com.intagri.mtgleader.persistence.friends.FriendsRepository
 import com.intagri.mtgleader.persistence.images.ImageApi
 import com.intagri.mtgleader.persistence.images.ImageRepository
 import com.intagri.mtgleader.persistence.images.ImageRepositoryImpl
@@ -14,7 +19,9 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
 import javax.inject.Singleton
 
 @Module
@@ -95,5 +102,59 @@ object MainModule {
         imageApi: ImageApi,
     ): ImageRepository {
         return ImageRepositoryImpl(appContext, imageApi)
+    }
+
+    @Provides
+    @Singleton
+    fun providesAuthCookieJar(
+        @ApplicationContext appContext: Context,
+        moshi: Moshi,
+    ): PersistentCookieJar {
+        return PersistentCookieJar(appContext, moshi)
+    }
+
+    @Provides
+    @Singleton
+    fun providesAuthOkHttpClient(cookieJar: PersistentCookieJar): OkHttpClient {
+        return OkHttpClient.Builder()
+            .cookieJar(cookieJar)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun providesAuthApi(okHttpClient: OkHttpClient, moshi: Moshi): AuthApi {
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.API_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(AuthApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun providesAuthRepository(
+        authApi: AuthApi,
+        cookieJar: PersistentCookieJar,
+    ): AuthRepository {
+        return AuthRepository(authApi, cookieJar)
+    }
+
+    @Provides
+    @Singleton
+    fun providesFriendsApi(okHttpClient: OkHttpClient, moshi: Moshi): FriendsApi {
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.API_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(FriendsApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun providesFriendsRepository(friendsApi: FriendsApi): FriendsRepository {
+        return FriendsRepository(friendsApi)
     }
 }

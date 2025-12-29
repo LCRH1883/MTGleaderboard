@@ -6,6 +6,8 @@ import android.content.res.ColorStateList
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.RippleDrawable
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.Gravity
@@ -40,6 +42,7 @@ import com.intagri.mtgleader.view.TabletopLayout
 import com.intagri.mtgleader.view.counter.edit.PlayerMenuListener
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.hypot
@@ -80,6 +83,8 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
     private var latestTurnCount: Int = 1
     private var latestTurnTimerSeconds: Int = GameViewModel.DEFAULT_TURN_TIMER_SECONDS
     private var latestTurnTimerEnabled: Boolean = true
+    private var latestTurnTimerOvertime: Boolean = false
+    private var turnTimerTone: ToneGenerator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -127,6 +132,7 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         latestTurnTimerSeconds =
             viewModel.turnTimerSeconds.value ?: GameViewModel.DEFAULT_TURN_TIMER_SECONDS
         latestTurnTimerEnabled = viewModel.turnTimerEnabled.value != false
+        latestTurnTimerOvertime = viewModel.turnTimerOvertime.value == true
 
         if (viewModel.tabletopType == TabletopType.LIST) {
             playersRecyclerView.visibility = View.VISIBLE
@@ -151,8 +157,18 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         viewModel.turnTimerSeconds.observe(this) {
             updateTurnTimerText(it)
         }
+        viewModel.turnTimerOvertime.observe(this) {
+            latestTurnTimerOvertime = it == true
+            updateTurnTimerText(latestTurnTimerSeconds)
+        }
         viewModel.turnTimerEnabled.observe(this) {
             updateTurnTimerEnabled(it == true)
+        }
+        viewModel.turnTimerAlarmEvent.observe(this) {
+            playTurnTimerAlarm()
+        }
+        viewModel.turnTimerExpiredEvent.observe(this) {
+            finish()
         }
 
         viewModel.keepScreenOn.observe(this) {
@@ -414,7 +430,9 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         })
     }
 
-    private fun resolveMenuButtonIntersection(): Pair<Int, Int>? {
+    private fun resolveMenuButtonIntersection(
+        preferLowerIntersection: Boolean = false,
+    ): Pair<Int, Int>? {
         val width = tabletopLayout.width
         val height = tabletopLayout.height
         if (width == 0 || height == 0) {
@@ -465,10 +483,7 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         if (verticalLines.isEmpty() || horizontalLines.isEmpty()) {
             return null
         }
-        val centerX = width / 2.0
-        val centerY = height / 2.0
-        var bestPoint: Pair<Int, Int>? = null
-        var bestDistance = Double.MAX_VALUE
+        val intersectionPoints = mutableListOf<Pair<Int, Int>>()
         for (vertical in verticalLines) {
             for (horizontal in horizontalLines) {
                 val withinX =
@@ -478,16 +493,66 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 if (!withinX || !withinY) {
                     continue
                 }
-                val dx = vertical.x.toDouble() - centerX
-                val dy = horizontal.y.toDouble() - centerY
-                val distance = dx * dx + dy * dy
-                if (distance < bestDistance) {
-                    bestDistance = distance
-                    bestPoint = vertical.x to horizontal.y
-                }
+                intersectionPoints.add(vertical.x to horizontal.y)
+            }
+        }
+        if (intersectionPoints.isEmpty()) {
+            return null
+        }
+        if (preferLowerIntersection) {
+            return intersectionPoints.maxByOrNull { it.second } ?: intersectionPoints.first()
+        }
+        val centerX = width / 2.0
+        val centerY = height / 2.0
+        var bestPoint: Pair<Int, Int> = intersectionPoints.first()
+        var bestDistance = Double.MAX_VALUE
+        for (point in intersectionPoints) {
+            val dx = point.first.toDouble() - centerX
+            val dy = point.second.toDouble() - centerY
+            val distance = dx * dx + dy * dy
+            if (distance < bestDistance) {
+                bestDistance = distance
+                bestPoint = point
             }
         }
         return bestPoint
+    }
+
+    private fun updateMenuButtonIntersection(currentPosition: TableLayoutPosition?) {
+        if (viewModel.tabletopType != TabletopType.FOUR_CIRCLE) {
+            return
+        }
+        val container = menuButtonContainer ?: return
+        if (currentPosition == null) {
+            return
+        }
+        val preferLowerIntersection = currentPosition == TableLayoutPosition.RIGHT_PANEL_1
+        val intersection = if (preferLowerIntersection) {
+            resolveMenuButtonIntersection(true)
+        } else {
+            resolveMenuButtonIntersection()
+        } ?: return
+        val containerSize =
+            resources.getDimensionPixelSize(R.dimen.game_menu_button_container_diameter)
+        val safeMargin = containerSize / 2
+        var centerX = intersection.first
+        var centerY = intersection.second
+        val maxCenterX = tabletopLayout.width - safeMargin
+        centerX = if (safeMargin <= maxCenterX) {
+            centerX.coerceIn(safeMargin, maxCenterX)
+        } else {
+            tabletopLayout.width / 2
+        }
+        val maxCenterY = tabletopLayout.height - safeMargin
+        centerY = if (safeMargin <= maxCenterY) {
+            centerY.coerceIn(safeMargin, maxCenterY)
+        } else {
+            tabletopLayout.height / 2
+        }
+        val layoutParams = container.layoutParams as? FrameLayout.LayoutParams ?: return
+        layoutParams.leftMargin = centerX - containerSize / 2
+        layoutParams.topMargin = centerY - containerSize / 2
+        container.layoutParams = layoutParams
     }
 
     private fun updateMenuButtonRotation() {
@@ -511,13 +576,15 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
             return
         }
         var targetRotation: Float? = null
-        for (panel in tabletopLayout.panels.values) {
+        var currentPosition: TableLayoutPosition? = null
+        for ((position, panel) in tabletopLayout.panels) {
             if (panel.childCount == 0) {
                 continue
             }
             val childTag = panel.getChildAt(0).tag as? Int ?: continue
             if (childTag == currentTurnId) {
                 targetRotation = panel.angle.toFloat()
+                currentPosition = position
                 break
             }
         }
@@ -529,6 +596,7 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
             updateTurnTimerVisibility()
             return
         }
+        updateMenuButtonIntersection(currentPosition)
         val containerRotation = menuButtonContainer?.rotation ?: 0f
         val finalRotation = -targetRotation - containerRotation
         rotatingContainer.rotation = finalRotation
@@ -560,6 +628,16 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
     }
 
     private fun formatTurnTimer(seconds: Int): String {
+        if (latestTurnTimerOvertime) {
+            val overtimeSeconds = abs(seconds)
+            val minutes = (overtimeSeconds / 60).coerceAtMost(99)
+            val remainingSeconds = if (minutes >= 99) {
+                (overtimeSeconds - 99 * 60).coerceIn(0, 99)
+            } else {
+                overtimeSeconds % 60
+            }
+            return String.format(Locale.US, "+%02d:%02d", minutes, remainingSeconds)
+        }
         val safeSeconds = if (seconds < 0) 0 else seconds
         val minutes = safeSeconds / 60
         val remainingSeconds = safeSeconds % 60
@@ -569,7 +647,9 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
     private fun applyTurnTimerTextStyle(textView: TextView? = menuButtonTimerText) {
         val timerText = textView ?: return
         val isLightTheme = ScThemeUtils.isLightTheme(this)
-        val textColor = if (isLightTheme) {
+        val textColor = if (latestTurnTimerOvertime) {
+            ContextCompat.getColor(this, R.color.light_red)
+        } else if (isLightTheme) {
             ContextCompat.getColor(this, R.color.black)
         } else {
             ContextCompat.getColor(this, R.color.white)
@@ -580,6 +660,19 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         } else {
             timerText.setShadowLayer(4f, 0f, 0f, ContextCompat.getColor(this, R.color.black))
         }
+    }
+
+    private fun playTurnTimerAlarm() {
+        if (turnTimerTone == null) {
+            turnTimerTone = ToneGenerator(AudioManager.STREAM_ALARM, 100)
+        }
+        turnTimerTone?.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 1000)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        turnTimerTone?.release()
+        turnTimerTone = null
     }
 
     private fun openGameMenu() {

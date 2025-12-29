@@ -10,8 +10,10 @@ import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import com.intagri.mtgleader.BuildConfig
 import com.intagri.mtgleader.R
+import com.intagri.mtgleader.ui.settings.friends.FriendsFragment
 import com.intagri.mtgleader.ui.settings.counters.manage.ManageCountersFragment
 import com.intagri.mtgleader.ui.settings.profiles.manage.ManageProfilesFragment
+import com.intagri.mtgleader.ui.settings.user.UserSettingsFragment
 import com.intagri.mtgleader.ui.setup.theme.ThemeActivity
 
 class SettingsFragment: Fragment() {
@@ -38,12 +40,28 @@ class SettingsFragment: Fragment() {
         toolbar.setNavigationOnClickListener {
             requireActivity().onBackPressed()
         }
+        val userSettings: View = view.findViewById(R.id.user_settings)
+        val friends: View = view.findViewById(R.id.friends)
         val manageProfiles: View = view.findViewById(R.id.manage_profiles)
         val manageCounters: View = view.findViewById(R.id.manage_counters)
         val themes: View = view.findViewById(R.id.themes)
         val about: View = view.findViewById(R.id.about)
         val versionText: TextView = view.findViewById(R.id.version_text)
         versionText.text = getString(R.string.version_label, BuildConfig.VERSION_NAME)
+        userSettings.setOnClickListener {
+            val f = UserSettingsFragment.newInstance()
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.container, f)
+                .addToBackStack(UserSettingsFragment.TAG)
+                .commit()
+        }
+        friends.setOnClickListener {
+            val f = FriendsFragment.newInstance()
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.container, f)
+                .addToBackStack(FriendsFragment.TAG)
+                .commit()
+        }
         manageProfiles.setOnClickListener {
             val f = ManageProfilesFragment.newInstance()
             requireActivity().supportFragmentManager.beginTransaction()

@@ -45,6 +45,8 @@
 
     <!-- Settings -->
     <string name="settings">Settings</string>
+    <string name="user_settings">User Settings</string>
+    <string name="friends">Friends</string>
     <string name="manage_profiles">Manage Profiles</string>
     <string name="create_profile">Create Profile</string>
     <string name="manage_counters">Custom Counters</string>
@@ -53,6 +55,57 @@
     <string name="about_app">About App</string>
     <string name="version_label">Version %1$s</string>
     <string name="about_description">MTG Leader Board is a Magic: The Gathering life counter for tabletop games.</string>
+
+    <!-- Auth -->
+    <string name="login">Log In</string>
+    <string name="logout">Log Out</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="email_label">Email:</string>
+    <string name="password_label">Password:</string>
+    <string name="username_label">Username:</string>
+    <string name="email_hint">name@example.com</string>
+    <string name="password_hint">Password</string>
+    <string name="username_hint">Username</string>
+    <string name="no_account_prompt">No account yet? Sign up below.</string>
+    <string name="login_failed">Log in failed. Check your credentials.</string>
+    <string name="signup_failed">Sign up failed. Try again.</string>
+    <string name="logout_failed">Log out failed. Try again.</string>
+    <string name="login_missing_fields">Email and password are required.</string>
+    <string name="signup_missing_fields">Email, username, and password are required.</string>
+    <string name="login_invalid_email">Enter a valid email address.</string>
+    <string name="login_invalid_credentials">Email or password is incorrect.</string>
+    <string name="auth_rate_limited">Too many attempts. Try again later.</string>
+    <string name="signup_invalid_email">Enter a valid email address.</string>
+    <string name="signup_invalid_username">Username must be 3-24 characters and use letters, numbers, or _.</string>
+    <string name="signup_invalid_password">Password must be at least 12 characters.</string>
+    <string name="signup_email_taken">That email is already in use.</string>
+    <string name="signup_username_taken">That username is already taken.</string>
+    <string name="signup_validation_error">Please check the form and try again.</string>
+    <string name="user_settings_logged_out">You are not logged in.</string>
+    <string name="user_settings_logged_in">Logged in as %1$s</string>
+
+    <!-- Friends -->
+    <string name="friends_list">Your Friends</string>
+    <string name="add_friend">Add Friend</string>
+    <string name="friend_username_hint">Username</string>
+    <string name="send_invite">Send Invite</string>
+    <string name="friends_empty">No friends yet.</string>
+    <string name="friend_status_accepted">Friend</string>
+    <string name="friend_status_incoming">Invite received</string>
+    <string name="friend_status_outgoing">Invite sent</string>
+    <string name="friend_status_unknown">Pending</string>
+    <string name="friend_action_remove">Remove</string>
+    <string name="friend_action_accept">Accept</string>
+    <string name="friend_action_decline">Decline</string>
+    <string name="friend_action_cancel">Cancel</string>
+    <string name="friend_invite_missing_username">Enter a username.</string>
+    <string name="friend_invite_invalid_username">Username must be 3-24 characters and use letters, numbers, or _.</string>
+    <string name="friend_invite_sent">Invite sent.</string>
+    <string name="friend_invite_failed">Invite failed. Try again.</string>
+    <string name="friend_action_failed">Friend action failed. Try again.</string>
+    <string name="friend_action_missing_id">This request can\'t be updated yet.</string>
+    <string name="friend_load_failed">Couldn\'t load friends. Try again later.</string>
+    <string name="friend_auth_required">Log in to manage friends.</string>
 
     <!-- Themes -->
     <string name="theme_label">Theme</string>
