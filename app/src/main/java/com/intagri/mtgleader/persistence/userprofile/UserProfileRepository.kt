@@ -1,11 +1,8 @@
 package com.intagri.mtgleader.persistence.userprofile
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
-import androidx.annotation.VisibleForTesting
 import com.intagri.mtgleader.persistence.auth.AuthApi
 import com.intagri.mtgleader.persistence.auth.AuthUser
 import com.intagri.mtgleader.persistence.auth.UserProfileUpdateRequest
@@ -19,13 +16,13 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
-import kotlin.math.min
 
 class UserProfileRepository @Inject constructor(
     @ApplicationContext private val appContext: Context,
@@ -33,7 +30,7 @@ class UserProfileRepository @Inject constructor(
     private val userProfileCache: UserProfileCache,
 ) {
     suspend fun updateDisplayName(displayName: String?): AuthUser {
-        val normalized = displayName?.trim()?.takeIf { it.isNotEmpty() }
+        val normalized = displayName?.trim() ?: ""
         val user = updateWithTimestampRetry("update display name") { updatedAt ->
             updateProfileWithFallback(
                 UserProfileUpdateRequest(
@@ -46,83 +43,52 @@ class UserProfileRepository @Inject constructor(
         return user
     }
 
-    suspend fun uploadAvatar(uri: String): AuthUser {
+    suspend fun prepareAvatarFile(uri: String): File {
         return withContext(Dispatchers.IO) {
-            val file = createAvatarFile(Uri.parse(uri))
-            try {
-                val avatarBody = file.asRequestBody("image/jpeg".toMediaType())
-                val avatarPart = MultipartBody.Part.createFormData("avatar", file.name, avatarBody)
-                val user = updateWithTimestampRetry("upload avatar") { updatedAt ->
-                    val updatedAtPart = updatedAt.toRequestBody("text/plain".toMediaType())
-                    uploadAvatarWithFallback(avatarPart, updatedAtPart)
-                }
-                userProfileCache.setUser(user)
-                user
-            } finally {
-                file.delete()
+            val outputDir = File(appContext.filesDir, "avatars")
+            if (!outputDir.exists()) {
+                outputDir.mkdirs()
             }
+            val outputFile = File(outputDir, "local_avatar.jpg")
+            val sourceUri = Uri.parse(uri)
+            copyUriToFile(sourceUri, outputFile)
         }
     }
 
-    @VisibleForTesting
-    internal fun createAvatarFile(uri: Uri): File {
-        val bitmap = decodeSampledBitmap(uri, AVATAR_SIZE, AVATAR_SIZE)
-            ?: throw IllegalArgumentException("Unable to decode avatar image.")
-        val square = cropToSquare(bitmap)
-        val scaled = if (square.width != AVATAR_SIZE || square.height != AVATAR_SIZE) {
-            Bitmap.createScaledBitmap(square, AVATAR_SIZE, AVATAR_SIZE, true)
+    suspend fun uploadAvatarFile(file: File): AuthUser {
+        return withContext(Dispatchers.IO) {
+            val avatarBody = file.asRequestBody("image/jpeg".toMediaType())
+            val avatarPart = MultipartBody.Part.createFormData("avatar", file.name, avatarBody)
+            val user = updateWithTimestampRetry("upload avatar") { updatedAt ->
+                val updatedAtPart = updatedAt.toRequestBody("text/plain".toMediaType())
+                uploadAvatarWithFallback(avatarPart, updatedAtPart)
+            }
+            userProfileCache.setUser(user)
+            user
+        }
+    }
+
+    private fun openInputStream(
+        resolver: android.content.ContentResolver,
+        uri: Uri
+    ): java.io.InputStream? {
+        return if (uri.scheme == "file") {
+            uri.path?.let { FileInputStream(File(it)) }
         } else {
-            square
+            resolver.openInputStream(uri)
         }
-        val outputFile = File.createTempFile("avatar_upload_", ".jpg", appContext.cacheDir)
-        FileOutputStream(outputFile).use { out ->
-            scaled.compress(Bitmap.CompressFormat.JPEG, AVATAR_QUALITY, out)
-        }
+    }
+
+    private fun copyUriToFile(uri: Uri, outputFile: File): File {
+        val resolver = appContext.contentResolver
+        openInputStream(resolver, uri)?.use { input ->
+            FileOutputStream(outputFile).use { output ->
+                input.copyTo(output)
+            }
+        } ?: throw IllegalArgumentException("Unable to read avatar content.")
         return outputFile
     }
 
-    private fun decodeSampledBitmap(uri: Uri, reqWidth: Int, reqHeight: Int): Bitmap? {
-        val resolver = appContext.contentResolver
-        val boundsOptions = BitmapFactory.Options().apply {
-            inJustDecodeBounds = true
-        }
-        resolver.openInputStream(uri)?.use { stream ->
-            BitmapFactory.decodeStream(stream, null, boundsOptions)
-        } ?: return null
-        if (boundsOptions.outWidth <= 0 || boundsOptions.outHeight <= 0) {
-            return null
-        }
-        val decodeOptions = BitmapFactory.Options().apply {
-            inSampleSize = calculateInSampleSize(boundsOptions, reqWidth, reqHeight)
-        }
-        return resolver.openInputStream(uri)?.use { stream ->
-            BitmapFactory.decodeStream(stream, null, decodeOptions)
-        }
-    }
-
-    private fun calculateInSampleSize(
-        options: BitmapFactory.Options,
-        reqWidth: Int,
-        reqHeight: Int
-    ): Int {
-        val (height, width) = options.outHeight to options.outWidth
-        var inSampleSize = 1
-        if (height > reqHeight || width > reqWidth) {
-            var halfHeight = height / 2
-            var halfWidth = width / 2
-            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-                inSampleSize *= 2
-            }
-        }
-        return inSampleSize
-    }
-
-    private fun cropToSquare(bitmap: Bitmap): Bitmap {
-        val size = min(bitmap.width, bitmap.height)
-        val left = ((bitmap.width - size) / 2.0f).toInt()
-        val top = ((bitmap.height - size) / 2.0f).toInt()
-        return Bitmap.createBitmap(bitmap, left, top, size, size)
-    }
 
     private fun newUpdatedAtTimestamp(): String {
         val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
@@ -214,8 +180,6 @@ class UserProfileRepository @Inject constructor(
 
     companion object {
         private const val TAG = "UserProfileRepository"
-        private const val AVATAR_SIZE = 512
-        private const val AVATAR_QUALITY = 92
         private const val TIMESTAMP_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
         private val TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern(TIMESTAMP_FORMAT)
             .withZone(ZoneOffset.UTC)

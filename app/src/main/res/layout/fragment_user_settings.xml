@@ -59,10 +59,13 @@
 
                     <ImageView
                         android:id="@+id/avatar_image"
-                        android:layout_width="72dp"
-                        android:layout_height="72dp"
+                        android:layout_width="96dp"
+                        android:layout_height="96dp"
                         android:layout_marginEnd="@dimen/default_padding"
+                        android:background="@drawable/avatar_background"
+                        android:clipToOutline="true"
                         android:contentDescription="@string/profile_avatar"
+                        android:padding="2dp"
                         android:scaleType="centerCrop"
                         android:src="@drawable/ic_skull" />
 

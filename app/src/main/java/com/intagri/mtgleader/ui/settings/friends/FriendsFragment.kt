@@ -129,7 +129,7 @@ class FriendsFragment : Fragment(), FriendActionListener {
     override fun onPrimaryAction(item: FriendUiModel) {
         when (item.status) {
             FriendStatus.INCOMING -> viewModel.acceptRequest(item.id)
-            FriendStatus.OUTGOING -> {}
+            FriendStatus.OUTGOING -> viewModel.cancelRequest(item.id)
             FriendStatus.ACCEPTED -> {}
             FriendStatus.UNKNOWN -> {}
         }

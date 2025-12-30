@@ -92,6 +92,7 @@
     <string name="profile_avatar">Profile avatar</string>
     <string name="profile_update_success">Profile updated.</string>
     <string name="profile_update_failed">Profile update failed. Try again.</string>
+    <string name="profile_saved_local">Profile saved locally. It will sync when online.</string>
     <string name="avatar_update_success">Avatar updated.</string>
     <string name="avatar_update_failed">Avatar update failed. Try again.</string>
     <string name="profile_auth_required">Log in to update your profile.</string>

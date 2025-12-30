@@ -14,6 +14,8 @@ data class AuthUser(
     val avatar: String? = null,
     @Json(name = "avatar_url")
     val avatarUrl: String? = null,
+    @Json(name = "avatar_updated_at")
+    val avatarUpdatedAt: String? = null,
     @Json(name = "created_at")
     val createdAt: String,
     @Json(name = "updated_at")

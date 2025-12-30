@@ -6,6 +6,9 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface FriendsApi {
+    @GET("v1/friends/connections")
+    suspend fun getConnections(): List<FriendConnectionDto>
+
     @GET("v1/friends")
     suspend fun getFriends(): FriendsOverviewDto
 
@@ -17,4 +20,7 @@ interface FriendsApi {
 
     @POST("v1/friends/requests/{id}/decline")
     suspend fun declineRequest(@Path("id") id: String)
+
+    @POST("v1/friends/requests/{id}/cancel")
+    suspend fun cancelRequest(@Path("id") id: String)
 }

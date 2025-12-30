@@ -9,8 +9,22 @@ data class UserSummaryDto(
     val username: String? = null,
     @Json(name = "display_name")
     val displayName: String? = null,
+    @Json(name = "avatar_path")
+    val avatarPath: String? = null,
+    @Json(name = "avatar_updated_at")
+    val avatarUpdatedAt: String? = null,
     @Json(name = "avatar_url")
     val avatarUrl: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class FriendConnectionDto(
+    val user: UserSummaryDto,
+    val status: String? = null,
+    @Json(name = "request_id")
+    val requestId: String? = null,
+    @Json(name = "created_at")
+    val createdAt: String? = null,
 )
 
 @JsonClass(generateAdapter = true)
