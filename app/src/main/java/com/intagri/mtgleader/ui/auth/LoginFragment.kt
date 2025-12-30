@@ -47,6 +47,7 @@ class LoginFragment : Fragment() {
         val passwordInput = view.findViewById<EditText>(R.id.password_input)
         val loginButton = view.findViewById<Button>(R.id.login_button)
         val signupButton = view.findViewById<Button>(R.id.signup_button)
+        val forgotPasswordLink = view.findViewById<TextView>(R.id.forgot_password_link)
         val errorText = view.findViewById<TextView>(R.id.error_text)
 
         loginButton.setOnClickListener {
@@ -74,12 +75,21 @@ class LoginFragment : Fragment() {
                 .commit()
         }
 
+        forgotPasswordLink.setOnClickListener {
+            val f = ForgotPasswordFragment.newInstance()
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.container, f)
+                .addToBackStack(ForgotPasswordFragment.TAG)
+                .commit()
+        }
+
         viewModel.state.observe(viewLifecycleOwner) { state ->
             val isLoading = state.isLoading
             emailInput.isEnabled = !isLoading
             passwordInput.isEnabled = !isLoading
             loginButton.isEnabled = !isLoading
             signupButton.isEnabled = !isLoading
+            forgotPasswordLink.isEnabled = !isLoading
             if (isLoading) {
                 errorText.visibility = View.GONE
             }

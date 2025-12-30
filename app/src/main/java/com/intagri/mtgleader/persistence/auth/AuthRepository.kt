@@ -19,6 +19,10 @@ class AuthRepository(
         return user
     }
 
+    suspend fun requestPasswordReset(email: String) {
+        authApi.requestPasswordReset(ForgotPasswordRequest(email = email))
+    }
+
     suspend fun loginWithGoogle(idToken: String): AuthUser {
         val user = authApi.loginWithGoogle(IdTokenRequest(idToken = idToken))
         userProfileCache.setUser(user)

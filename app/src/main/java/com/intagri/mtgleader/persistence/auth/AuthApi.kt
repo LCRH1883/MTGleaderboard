@@ -18,6 +18,9 @@ interface AuthApi {
     @POST("v1/auth/login")
     suspend fun login(@Body request: LoginRequest): AuthUser
 
+    @POST("v1/auth/forgot")
+    suspend fun requestPasswordReset(@Body request: ForgotPasswordRequest)
+
     @GET("v1/users/me")
     suspend fun getCurrentUser(@Query("include_stats") includeStats: Boolean? = null): AuthUser
 

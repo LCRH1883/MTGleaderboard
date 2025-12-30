@@ -38,6 +38,11 @@ data class LoginRequest(
 )
 
 @JsonClass(generateAdapter = true)
+data class ForgotPasswordRequest(
+    val email: String,
+)
+
+@JsonClass(generateAdapter = true)
 data class IdTokenRequest(
     @Json(name = "id_token")
     val idToken: String,

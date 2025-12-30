@@ -90,6 +90,14 @@
     <string name="signup_email_taken">That email is already in use.</string>
     <string name="signup_username_taken">That username is already taken.</string>
     <string name="signup_validation_error">Please check the form and try again.</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="reset_instructions">Enter your email and we will send a reset link.</string>
+    <string name="send_reset_link">Send Reset Link</string>
+    <string name="reset_missing_email">Email required.</string>
+    <string name="reset_invalid_email">Enter a valid email address.</string>
+    <string name="reset_email_sent">If that email exists, you will get a reset link.</string>
+    <string name="reset_smtp_unavailable">Email is unavailable right now. Try again later.</string>
+    <string name="reset_failed">Reset failed. Try again.</string>
     <string name="user_settings_logged_out">You are not logged in.</string>
     <string name="user_settings_logged_in">Logged in as %1$s</string>
     <string name="display_name_label">Display Name</string>
