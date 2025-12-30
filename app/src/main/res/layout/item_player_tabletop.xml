@@ -267,20 +267,6 @@
                 android:src="@drawable/ic_rearrange_counters" />
         </LinearLayout>
 
-        <Button
-            android:id="@+id/end_turn_button"
-            style="?android:attr/buttonBarButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="@dimen/end_turn_button_height"
-            android:layout_marginEnd="@dimen/default_padding_half"
-            android:layout_marginBottom="@dimen/default_padding_half"
-            android:background="@drawable/menu_button_bg"
-            android:paddingHorizontal="@dimen/default_padding_half"
-            android:text="@string/end_turn"
-            android:textColor="@color/white"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
         <View
             android:id="@+id/player_select_overlay"
             android:layout_width="0dp"

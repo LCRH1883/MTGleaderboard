@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/scBackgroundColor"
+    android:gravity="center_horizontal"
+    android:minWidth="@dimen/dialog_width"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/default_padding">
+
+    <ImageView
+        android:id="@+id/close_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start"
+        android:foreground="?attr/selectableItemBackground"
+        android:padding="16dp"
+        android:src="@drawable/ic_close"
+        app:tint="?attr/scTextColorPrimary" />
+
+    <TextView
+        android:id="@+id/title"
+        style="@style/Header1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/default_padding"
+        android:text="@string/timer_menu_title" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/default_padding"
+        android:layout_marginBottom="@dimen/default_padding"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/current_turn_label"
+            style="@style/Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/current_turn_label" />
+
+        <TextView
+            android:id="@+id/current_turn_value"
+            style="@style/Header2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/default_padding_quarter"
+            android:text="@string/turn_number_placeholder" />
+
+        <TextView
+            android:id="@+id/game_clock_label"
+            style="@style/Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/default_padding_half"
+            android:text="@string/game_clock_label" />
+
+        <TextView
+            android:id="@+id/game_clock_value"
+            style="@style/Header2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/default_padding_quarter"
+            android:text="@string/game_clock_placeholder" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/back_turn_button"
+        style="@style/MenuButton.Round"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/menu_button_height"
+        android:layout_marginHorizontal="@dimen/default_padding"
+        android:text="@string/go_back_turn" />
+
+    <Button
+        android:id="@+id/pause_button"
+        style="@style/MenuButton.Round"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/menu_button_height"
+        android:layout_marginHorizontal="@dimen/default_padding"
+        android:layout_marginTop="@dimen/default_padding_half"
+        android:text="@string/pause_game" />
+
+</LinearLayout>

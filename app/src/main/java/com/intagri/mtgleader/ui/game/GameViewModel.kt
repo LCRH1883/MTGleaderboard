@@ -1,5 +1,6 @@
 package com.intagri.mtgleader.ui.game
 
+import android.os.SystemClock
 import androidx.lifecycle.*
 import com.intagri.mtgleader.R
 import com.intagri.mtgleader.model.TabletopType
@@ -74,6 +75,12 @@ class GameViewModel @Inject constructor(
     private val _turnTimerExpiredEvent = SingleLiveEvent<Unit>()
     val turnTimerExpiredEvent: LiveData<Unit> = _turnTimerExpiredEvent
 
+    private val _gamePaused = MutableLiveData<Boolean>(false)
+    val gamePaused: LiveData<Boolean> = _gamePaused
+
+    private val _gameElapsedSeconds = MutableLiveData<Long>(0L)
+    val gameElapsedSeconds: LiveData<Long> = _gameElapsedSeconds
+
     private val _playerRotationClockwise = MutableLiveData<Boolean>(true)
     val playerRotationClockwise: LiveData<Boolean> = _playerRotationClockwise
 
@@ -98,6 +105,10 @@ class GameViewModel @Inject constructor(
         TableLayoutPosition.LEFT_PANEL_1,
     )
     private var turnTimerJob: Job? = null
+    private var gameClockJob: Job? = null
+    private var gameStartElapsedMs: Long = SystemClock.elapsedRealtime()
+    private var gamePausedAtMs: Long? = null
+    private var gamePausedDurationMs: Long = 0L
 
     /**
      * Maps player id to an ordered list of selected counter template ids
@@ -110,6 +121,7 @@ class GameViewModel @Inject constructor(
         _keepScreenOn.value = gameRepository.keepScreenOn
         _hideNavigation.value = gameRepository.hideNavigation
         initializePlayers()
+        startGameClock()
     }
 
     private fun initializePlayers() {
@@ -433,7 +445,9 @@ class GameViewModel @Inject constructor(
         _turnTimerDurationSeconds.value = totalSeconds
         _turnTimerSeconds.value = totalSeconds
         _turnTimerOvertime.value = false
-        if (_turnTimerEnabled.value == true && _currentTurnPlayerId.value != null) {
+        if (_turnTimerEnabled.value == true && _currentTurnPlayerId.value != null &&
+            _gamePaused.value != true
+        ) {
             startTurnTimer()
         } else {
             stopTurnTimer()
@@ -507,8 +521,42 @@ class GameViewModel @Inject constructor(
         turnHistory.clear()
         _currentTurnPlayerId.value = null
         _turnCount.value = 1
+        resetGameClock()
         resetTurnTimer()
         initializePlayers()
+    }
+
+    fun pauseGame() {
+        if (_gamePaused.value == true) {
+            return
+        }
+        _gamePaused.value = true
+        gamePausedAtMs = SystemClock.elapsedRealtime()
+        stopTurnTimer()
+        updateGameClock()
+    }
+
+    fun resumeGame() {
+        if (_gamePaused.value != true) {
+            return
+        }
+        val now = SystemClock.elapsedRealtime()
+        val pausedAt = gamePausedAtMs ?: now
+        gamePausedDurationMs += now - pausedAt
+        gamePausedAtMs = null
+        _gamePaused.value = false
+        if (_turnTimerEnabled.value == true && _currentTurnPlayerId.value != null) {
+            startTurnTimer()
+        }
+        updateGameClock()
+    }
+
+    fun togglePause() {
+        if (_gamePaused.value == true) {
+            resumeGame()
+        } else {
+            pauseGame()
+        }
     }
 
     private data class TurnHistoryEntry(
@@ -520,7 +568,9 @@ class GameViewModel @Inject constructor(
         val durationSeconds = _turnTimerDurationSeconds.value ?: DEFAULT_TURN_TIMER_SECONDS
         _turnTimerSeconds.value = durationSeconds
         _turnTimerOvertime.value = false
-        if (_turnTimerEnabled.value == true && _currentTurnPlayerId.value != null) {
+        if (_turnTimerEnabled.value == true && _currentTurnPlayerId.value != null &&
+            _gamePaused.value != true
+        ) {
             startTurnTimer()
         } else {
             stopTurnTimer()
@@ -528,6 +578,9 @@ class GameViewModel @Inject constructor(
     }
 
     private fun startTurnTimer() {
+        if (_gamePaused.value == true) {
+            return
+        }
         stopTurnTimer()
         turnTimerJob = viewModelScope.launch {
             while (true) {
@@ -560,5 +613,35 @@ class GameViewModel @Inject constructor(
     private fun stopTurnTimer() {
         turnTimerJob?.cancel()
         turnTimerJob = null
+    }
+
+    private fun startGameClock() {
+        stopGameClock()
+        gameClockJob = viewModelScope.launch {
+            while (true) {
+                updateGameClock()
+                delay(1000)
+            }
+        }
+    }
+
+    private fun stopGameClock() {
+        gameClockJob?.cancel()
+        gameClockJob = null
+    }
+
+    private fun resetGameClock() {
+        gameStartElapsedMs = SystemClock.elapsedRealtime()
+        gamePausedAtMs = null
+        gamePausedDurationMs = 0L
+        _gamePaused.value = false
+        updateGameClock()
+    }
+
+    private fun updateGameClock() {
+        val now = SystemClock.elapsedRealtime()
+        val effectiveNow = gamePausedAtMs ?: now
+        val elapsedMs = (effectiveNow - gameStartElapsedMs - gamePausedDurationMs).coerceAtLeast(0L)
+        _gameElapsedSeconds.postValue(elapsedMs / 1000L)
     }
 }

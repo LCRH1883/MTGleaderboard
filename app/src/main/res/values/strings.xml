@@ -41,6 +41,14 @@
     <string name="turn_options">Turn Options</string>
     <string name="go_back_turn">Go Back</string>
     <string name="end_turn">End Turn</string>
+    <string name="timer_menu_title">Timer</string>
+    <string name="current_turn_label">Current Turn</string>
+    <string name="turn_number">Turn %1$d</string>
+    <string name="turn_number_placeholder">Turn 1</string>
+    <string name="game_clock_label">Game Clock</string>
+    <string name="game_clock_placeholder">00:00</string>
+    <string name="pause_game">Pause</string>
+    <string name="resume_game">Resume</string>
     <string name="keep_screen_awake">Keep Screen Awake</string>
     <string name="hide_navigation">Hide Navigation</string>
 

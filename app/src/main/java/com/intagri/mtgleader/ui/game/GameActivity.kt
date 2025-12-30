@@ -9,8 +9,12 @@ import android.graphics.drawable.RippleDrawable
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
@@ -18,7 +22,6 @@ import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.ArrayAdapter
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
@@ -33,6 +36,7 @@ import com.intagri.mtgleader.model.TabletopType
 import com.intagri.mtgleader.model.player.PlayerSetupModel
 import com.intagri.mtgleader.ui.BaseActivity
 import com.intagri.mtgleader.ui.game.options.GameOptionsDialogFragment
+import com.intagri.mtgleader.ui.game.options.GameTimerDialogFragment
 import com.intagri.mtgleader.ui.game.rv.GamePlayerRecyclerAdapter
 import com.intagri.mtgleader.ui.game.tabletop.GameTabletopLayoutAdapter
 import com.intagri.mtgleader.ui.setup.theme.ScThemeUtils
@@ -80,6 +84,11 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
     private var menuButtonIcon: ImageView? = null
     private var menuButtonTurnText: TextView? = null
     private var menuButtonTimerText: TextView? = null
+    private var menuButtonTimerProxy: View? = null
+    private var toolbarTimerText: TextView? = null
+    private val timerLongPressHandler = Handler(Looper.getMainLooper())
+    private val timerLongPressTimeoutMs = 1000L
+    private var timerLongPressTriggered = false
     private var latestTurnCount: Int = 1
     private var latestTurnTimerSeconds: Int = GameViewModel.DEFAULT_TURN_TIMER_SECONDS
     private var latestTurnTimerEnabled: Boolean = true
@@ -99,6 +108,9 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         //Remove default theme tinting for game button
         toolbar.navigationIcon?.setTintList(null)
         toolbar.title = ScThemeUtils.resolveThemedTitle(this, datastore.theme)
+        if (viewModel.tabletopType == TabletopType.LIST) {
+            setupToolbarTurnTimer(toolbar)
+        }
 
         gameContainer = findViewById(R.id.game_container)
         gameContainer.clipChildren = false
@@ -243,7 +255,7 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 groupLp.leftMargin = (rotatingSize / 2f - pivotX).roundToInt()
                 groupLp.topMargin = (rotatingSize / 2f - pivotY).roundToInt()
 
-                val circleContainer = FrameLayout(this@GameActivity)
+                val circleContainer = CircularTouchFrameLayout(this@GameActivity)
                 circleContainer.layoutParams = FrameLayout.LayoutParams(
                     containerSize,
                     containerSize
@@ -290,6 +302,9 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 timerText.setSingleLine(true)
                 timerText.setTextSize(TypedValue.COMPLEX_UNIT_PX, timerTextSize)
                 timerText.elevation = circleContainer.elevation + 1f
+                timerText.setPadding(0, 0, 0, 0)
+                timerText.minWidth = 0
+                timerText.minHeight = 0
                 val timerLp = FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.WRAP_CONTENT,
                     FrameLayout.LayoutParams.WRAP_CONTENT
@@ -297,7 +312,6 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 timerLp.gravity = Gravity.START or Gravity.CENTER_VERTICAL
                 timerLp.leftMargin = containerSize + timerGap
                 groupContainer.addView(timerText, timerLp)
-
                 rotatingContainer.addView(groupContainer, groupLp)
 
                 container.addView(rotatingContainer)
@@ -403,8 +417,8 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 } else {
                     tabletopLayout.height / 2
                 }
-                containerLp.leftMargin = centerX - containerWidth / 2
-                containerLp.topMargin = centerY - containerHeight / 2
+                containerLp.leftMargin = centerX - containerSize / 2
+                containerLp.topMargin = centerY - containerSize / 2
                 gameContainer.addView(container, containerLp)
                 container.bringToFront()
                 circleContainer.foreground = RippleDrawable(
@@ -421,6 +435,7 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 menuButtonIcon = menuButton
                 menuButtonTurnText = turnText
                 menuButtonTimerText = timerText
+                setupMenuTimerProxy(timerText)
                 updateTurnCounterText(latestTurnCount)
                 updateTurnTimerText(latestTurnTimerSeconds)
                 updateTurnTimerVisibility()
@@ -604,6 +619,9 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         turnText?.rotation = 0f
         menuButtonTimerText?.rotation = 0f
         updateTurnTimerVisibility()
+        menuButtonTimerText?.let { timer ->
+            timer.post { updateMenuTimerProxyPosition(timer) }
+        }
     }
 
     private fun updateTurnCounterText(turnCount: Int) {
@@ -613,8 +631,15 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
 
     private fun updateTurnTimerText(seconds: Int) {
         latestTurnTimerSeconds = seconds
-        menuButtonTimerText?.text = formatTurnTimer(seconds)
-        applyTurnTimerTextStyle()
+        val formatted = formatTurnTimer(seconds)
+        menuButtonTimerText?.let {
+            it.text = formatted
+            applyTurnTimerTextStyle(it)
+        }
+        toolbarTimerText?.let {
+            it.text = formatted
+            applyTurnTimerTextStyle(it)
+        }
     }
 
     private fun updateTurnTimerEnabled(enabled: Boolean) {
@@ -625,6 +650,8 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
     private fun updateTurnTimerVisibility() {
         val shouldShow = latestTurnTimerEnabled
         menuButtonTimerText?.visibility = if (shouldShow) View.VISIBLE else View.GONE
+        toolbarTimerText?.visibility = if (shouldShow) View.VISIBLE else View.GONE
+        menuButtonTimerProxy?.visibility = if (shouldShow) View.VISIBLE else View.GONE
     }
 
     private fun formatTurnTimer(seconds: Int): String {
@@ -671,6 +698,7 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
 
     override fun onDestroy() {
         super.onDestroy()
+        timerLongPressHandler.removeCallbacksAndMessages(null)
         turnTimerTone?.release()
         turnTimerTone = null
     }
@@ -803,30 +831,6 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         viewModel.selectStartingPlayer(playerId)
     }
 
-    override fun onEndTurn(playerId: Int) {
-        viewModel.endTurn(playerId)
-    }
-
-    override fun onEndTurnUndoRequested(playerId: Int) {
-        val currentId = viewModel.currentTurnPlayerId.value ?: return
-        if (currentId != playerId) {
-            return
-        }
-        openGoBackTurnMenu()
-    }
-
-    private fun openGoBackTurnMenu() {
-        val items = arrayOf(getString(R.string.go_back_turn))
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(R.string.turn_options)
-            .setAdapter(GoBackTurnAdapter(this, items)) { _, _ ->
-                viewModel.goBackTurn()
-            }
-            .setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.dismiss() }
-
-        dialog.show()
-    }
-
     override fun onOpenExitPrompt() {
         openExitPrompt()
     }
@@ -835,16 +839,117 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         openResetPrompt()
     }
 
-    private class GoBackTurnAdapter(
-        context: Context,
-        items: Array<String>,
-    ) : ArrayAdapter<String>(context, android.R.layout.simple_list_item_1, items) {
-        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-            val view = super.getView(position, convertView, parent)
-            val textView = view.findViewById<TextView>(android.R.id.text1)
-            val color = ScThemeUtils.resolveThemeColor(context, R.attr.scTextColorPrimary)
-            textView.setTextColor(color)
-            return view
+    private fun setupToolbarTurnTimer(toolbar: Toolbar) {
+        val timerText = TextView(this)
+        timerText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+        timerText.setTypeface(timerText.typeface, Typeface.BOLD)
+        timerText.gravity = Gravity.CENTER
+        timerText.includeFontPadding = false
+        timerText.setSingleLine(true)
+        timerText.setPadding(0, 0, 0, 0)
+        timerText.minWidth = 0
+        timerText.minHeight = 0
+        applyTurnTimerTextStyle(timerText)
+        val lp = Toolbar.LayoutParams(
+            Toolbar.LayoutParams.WRAP_CONTENT,
+            Toolbar.LayoutParams.WRAP_CONTENT
+        )
+        lp.gravity = Gravity.END or Gravity.CENTER_VERTICAL
+        toolbar.addView(timerText, lp)
+        toolbarTimerText = timerText
+        setupTurnTimerInteractions(timerText)
+        updateTurnTimerText(latestTurnTimerSeconds)
+        updateTurnTimerVisibility()
+    }
+
+    private fun setupTurnTimerInteractions(target: View) {
+        target.isClickable = true
+        target.setOnTouchListener { view, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    timerLongPressTriggered = false
+                    view.isPressed = true
+                    timerLongPressHandler.postDelayed({
+                        timerLongPressTriggered = true
+                        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                        openTimerMenu()
+                    }, timerLongPressTimeoutMs)
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val outOfBounds = event.x < 0f ||
+                        event.x > view.width ||
+                        event.y < 0f ||
+                        event.y > view.height
+                    if (outOfBounds) {
+                        view.isPressed = false
+                        timerLongPressHandler.removeCallbacksAndMessages(null)
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    view.isPressed = false
+                    timerLongPressHandler.removeCallbacksAndMessages(null)
+                    if (!timerLongPressTriggered) {
+                        endTurnFromTimer()
+                        view.performClick()
+                    }
+                    true
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    view.isPressed = false
+                    timerLongPressHandler.removeCallbacksAndMessages(null)
+                    true
+                }
+                else -> false
+            }
         }
+    }
+
+    private fun setupMenuTimerProxy(timerText: TextView) {
+        if (menuButtonTimerProxy == null) {
+            val proxy = View(this)
+            proxy.setBackgroundColor(ContextCompat.getColor(this, android.R.color.transparent))
+            setupTurnTimerInteractions(proxy)
+            val lp = FrameLayout.LayoutParams(0, 0)
+            gameContainer.addView(proxy, lp)
+            menuButtonTimerProxy = proxy
+        }
+        timerText.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            updateMenuTimerProxyPosition(timerText)
+        }
+        timerText.post { updateMenuTimerProxyPosition(timerText) }
+    }
+
+    private fun updateMenuTimerProxyPosition(timerText: TextView) {
+        val proxy = menuButtonTimerProxy ?: return
+        val rect = android.graphics.Rect()
+        if (!timerText.getGlobalVisibleRect(rect)) {
+            return
+        }
+        if (rect.width() == 0 || rect.height() == 0) {
+            return
+        }
+        val containerLocation = IntArray(2)
+        gameContainer.getLocationOnScreen(containerLocation)
+        val left = rect.left - containerLocation[0]
+        val top = rect.top - containerLocation[1]
+        val lp = proxy.layoutParams as FrameLayout.LayoutParams
+        lp.width = rect.width()
+        lp.height = rect.height()
+        lp.leftMargin = left
+        lp.topMargin = top
+        proxy.layoutParams = lp
+        proxy.bringToFront()
+    }
+
+    private fun endTurnFromTimer() {
+        val currentId = viewModel.currentTurnPlayerId.value ?: return
+        viewModel.endTurn(currentId)
+    }
+
+    private fun openTimerMenu() {
+        GameTimerDialogFragment.newInstance()
+            .show(supportFragmentManager, GameTimerDialogFragment.TAG_TIMER_MENU)
     }
 }

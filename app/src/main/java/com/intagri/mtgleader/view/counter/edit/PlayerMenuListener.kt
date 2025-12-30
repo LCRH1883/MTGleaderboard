@@ -10,6 +10,4 @@ interface PlayerMenuListener {
     fun onCancelCounterChanges(playerId: Int)
     fun onConfirmCounterChanges(playerId: Int)
     fun onStartingPlayerSelected(playerId: Int)
-    fun onEndTurn(playerId: Int)
-    fun onEndTurnUndoRequested(playerId: Int)
 }
