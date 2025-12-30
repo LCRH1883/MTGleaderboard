@@ -3,8 +3,10 @@ package com.intagri.mtgleader.ui.settings.friends
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.intagri.mtgleader.R
 
 class FriendsRecyclerAdapter(
@@ -33,13 +35,30 @@ class FriendsRecyclerAdapter(
 
     class FriendViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val nameText: TextView = itemView.findViewById(R.id.friend_name)
+        private val usernameText: TextView = itemView.findViewById(R.id.friend_username)
         private val statusText: TextView = itemView.findViewById(R.id.friend_status)
         private val actionsContainer: View = itemView.findViewById(R.id.friend_actions)
         private val primaryAction: TextView = itemView.findViewById(R.id.primary_action)
         private val secondaryAction: TextView = itemView.findViewById(R.id.secondary_action)
+        private val avatarImage: ImageView = itemView.findViewById(R.id.friend_avatar)
 
         fun bind(item: FriendUiModel, listener: FriendActionListener) {
             nameText.text = item.displayName
+            if (!item.username.isNullOrBlank()) {
+                usernameText.text = "@${item.username}"
+                usernameText.visibility = View.VISIBLE
+            } else {
+                usernameText.visibility = View.GONE
+            }
+            val avatarUrl = item.avatarUrl
+            if (avatarUrl.isNullOrBlank()) {
+                avatarImage.setImageResource(R.drawable.ic_skull)
+            } else {
+                Glide.with(itemView)
+                    .load(avatarUrl)
+                    .placeholder(R.drawable.ic_skull)
+                    .into(avatarImage)
+            }
             val context = itemView.context
             val (statusRes, primaryRes, secondaryRes) = when (item.status) {
                 FriendStatus.INCOMING -> Triple(

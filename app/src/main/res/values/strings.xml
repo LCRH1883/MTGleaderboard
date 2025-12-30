@@ -30,6 +30,7 @@
     <string name="are_you_sure_reset">Are you sure you want to reset the game?</string>
     <string name="select_player">Select Player</string>
     <string name="random_player">Random Player</string>
+    <string name="dice_menu">Dice</string>
     <string name="options">Options</string>
     <string name="player_rotation">Player Rotation</string>
     <string name="clockwise">Clockwise</string>

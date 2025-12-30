@@ -770,10 +770,6 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         viewModel.rearrangeCounters(playerId)
     }
 
-    override fun onRollOpened(playerId: Int) {
-        viewModel.roll(playerId)
-    }
-
     override fun onCloseSubMenu(playerId: Int) {
         viewModel.closeSubMenu(playerId)
     }

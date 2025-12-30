@@ -19,6 +19,7 @@ import javax.inject.Inject
 class GameOptionsDialogFragment : DialogFragment() {
     companion object {
         private const val TAG_GAME_SETTINGS = "tag_game_settings"
+        private const val TAG_GAME_DICE = "tag_game_dice"
 
         fun newInstance(): GameOptionsDialogFragment {
             val f = GameOptionsDialogFragment()
@@ -33,6 +34,7 @@ class GameOptionsDialogFragment : DialogFragment() {
     private lateinit var title: TextView
     private lateinit var closeButton: View
     private lateinit var optionsButton: View
+    private lateinit var diceButton: View
     private lateinit var selectPlayerButton: View
     private lateinit var randomPlayerButton: View
     private lateinit var resetButton: View
@@ -85,6 +87,12 @@ class GameOptionsDialogFragment : DialogFragment() {
         randomPlayerButton.setOnClickListener {
             viewModel.selectRandomStartingPlayer()
             dismiss()
+        }
+        diceButton = view.findViewById(R.id.dice_button)
+        diceButton.setOnClickListener {
+            dismiss()
+            GameDiceDialogFragment.newInstance()
+                .show(parentFragmentManager, TAG_GAME_DICE)
         }
         resetButton = view.findViewById(R.id.reset_game_button)
         resetButton.setOnClickListener {

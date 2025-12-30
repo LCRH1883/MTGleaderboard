@@ -8,10 +8,13 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.CompoundButton
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.lifecycleScope
 import com.intagri.mtgleader.R
@@ -21,6 +24,8 @@ import com.intagri.mtgleader.persistence.auth.AuthRepository
 import com.intagri.mtgleader.ui.auth.LoginFragment
 import com.intagri.mtgleader.ui.game.GameActivity
 import com.intagri.mtgleader.ui.settings.SettingsFragment
+import com.intagri.mtgleader.ui.settings.friends.FriendsFragment
+import com.intagri.mtgleader.ui.settings.friends.FriendsViewModel
 import com.intagri.mtgleader.ui.settings.user.UserSettingsFragment
 import com.intagri.mtgleader.ui.setup.tabletop.SetupTabletopFragment
 import com.intagri.mtgleader.ui.setup.theme.ScThemeUtils
@@ -60,6 +65,7 @@ class SetupFragment : Fragment(), CompoundButton.OnCheckedChangeListener {
     lateinit var authRepository: AuthRepository
 
     private val viewModel: SetupViewModel by activityViewModels()
+    private val friendsViewModel: FriendsViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -73,6 +79,14 @@ class SetupFragment : Fragment(), CompoundButton.OnCheckedChangeListener {
         super.onViewCreated(view, savedInstanceState)
 
         toolbar = view.findViewById(R.id.toolbar)
+        toolbar.navigationIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_users)
+        toolbar.setNavigationOnClickListener {
+            val f = FriendsFragment.newInstance()
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.container, f)
+                .addToBackStack(FriendsFragment.TAG)
+                .commit()
+        }
         toolbar.inflateMenu(R.menu.setup)
         toolbar.setOnMenuItemClickListener {
             when (it.itemId) {
@@ -112,7 +126,19 @@ class SetupFragment : Fragment(), CompoundButton.OnCheckedChangeListener {
                 }
             }
         }
-        toolbar.title = ScThemeUtils.resolveThemedTitle(requireContext(), datastore.theme)
+        toolbar.title = ""
+        val titleView = TextView(requireContext()).apply {
+            text = ScThemeUtils.resolveThemedTitle(requireContext(), datastore.theme)
+            setTextAppearance(requireContext(), R.style.Header3)
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.light_mode_primary_text))
+            layoutParams = Toolbar.LayoutParams(
+                Toolbar.LayoutParams.WRAP_CONTENT,
+                Toolbar.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = android.view.Gravity.CENTER
+            }
+        }
+        toolbar.addView(titleView)
 
         playerNumberButtons = listOf(
             view.findViewById(R.id.one_player_button),
@@ -299,6 +325,7 @@ class SetupFragment : Fragment(), CompoundButton.OnCheckedChangeListener {
     override fun onResume() {
         super.onResume()
         viewModel.refresh()
+        friendsViewModel.refreshFriends()
     }
 
     private fun setTabletopLayoutButtonContent(
@@ -322,4 +349,5 @@ class SetupFragment : Fragment(), CompoundButton.OnCheckedChangeListener {
             viewModel.setHideNavigation(isChecked)
         }
     }
+
 }

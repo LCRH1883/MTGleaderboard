@@ -10,5 +10,7 @@ enum class FriendStatus {
 data class FriendUiModel(
     val id: String?,
     val displayName: String,
+    val username: String? = null,
     val status: FriendStatus,
+    val avatarUrl: String? = null,
 )

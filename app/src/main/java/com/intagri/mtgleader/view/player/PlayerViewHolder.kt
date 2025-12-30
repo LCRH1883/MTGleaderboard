@@ -9,18 +9,13 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewTreeObserver
 import android.view.animation.AnimationUtils
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.*
 import com.intagri.mtgleader.R
-import com.intagri.mtgleader.compose.ComposeTheme
 import com.intagri.mtgleader.databinding.ItemPlayerTabletopBinding
 import com.intagri.mtgleader.ui.game.GamePlayerUiModel
 import com.intagri.mtgleader.ui.game.OnPlayerUpdatedListener
-import com.intagri.mtgleader.ui.roll.RollPanel
 import com.intagri.mtgleader.ui.setup.theme.ScThemeUtils
 import com.intagri.mtgleader.view.HoldableButton
 import com.intagri.mtgleader.view.PullToRevealLayout
@@ -48,7 +43,7 @@ class PlayerViewHolder(
     private val selectionOverlay = binding.playerSelectOverlay
     private val endTurnButton = binding.endTurnButton
     private val endTurnHandler = Handler(Looper.getMainLooper())
-    private val endTurnLongPressTimeoutMs = 2000L
+    private val endTurnLongPressTimeoutMs = 1000L
     private var endTurnLongPressTriggered = false
 
     private val countersAdapter = CountersRecyclerAdapter(onPlayerUpdatedListener)
@@ -92,9 +87,6 @@ class PlayerViewHolder(
         }
         binding.rearrangeCounters.setOnClickListener {
             playerMenuListener.onRearrangeCountersOpened(playerId)
-        }
-        binding.roll.setOnClickListener {
-            playerMenuListener.onRollOpened(playerId)
         }
         endTurnButton.setOnClickListener {
             playerMenuListener.onEndTurn(playerId)
@@ -142,12 +134,6 @@ class PlayerViewHolder(
                 else -> false
             }
         }
-        binding.rollComposeView.setContent {
-            ComposeTheme.ScComposeTheme {
-                RollPanel(playerColor = Color.Blue)
-            }
-        }
-
         binding.revealedAddCounterButton.setListener(object :
             HoldableButton.HoldableButtonListener {
             override fun onSingleClick() {
@@ -164,19 +150,6 @@ class PlayerViewHolder(
 
             override fun onHoldContinued(increments: Int) {}
         })
-        binding.revealedRollButton.setListener(object :
-            HoldableButton.HoldableButtonListener {
-            override fun onSingleClick() {
-                playerMenuListener.onRollOpened(playerId)
-            }
-
-            override fun onHoldContinued(increments: Int) {}
-        })
-
-        binding.rollDone.setOnClickListener {
-            closeCountersSubmenu()
-        }
-
         binding.editCancel.setOnClickListener {
             playerMenuListener.onCancelCounterChanges(playerId)
             closeCountersSubmenu()
@@ -191,7 +164,6 @@ class PlayerViewHolder(
             override fun onReveal() {}
             override fun onHide() {
                 playerMenuListener.onCloseSubMenu(playerId)
-                binding.rollComposeView.disposeComposition()
                 binding.countersRecycler.scrollingEnabled = true
             }
 
@@ -204,7 +176,6 @@ class PlayerViewHolder(
 
     private fun closeCountersSubmenu() {
         playerMenuListener.onCloseSubMenu(playerId)
-        binding.rollComposeView.disposeComposition()
         if (pullToReveal) {
             binding.pullToRevealContainer.hide(true)
         }
@@ -256,11 +227,6 @@ class PlayerViewHolder(
             binding.revealedAddCountersIcon.imageTintList = gameButtonColorStateList
             binding.revealedAddCountersLabel.setTextColor(gameButtonColorStateList)
             binding.addCounter.imageTintList = gameButtonColorStateList
-            binding.revealedRollIcon.imageTintList = gameButtonColorStateList
-            binding.revealedRollLabel.setTextColor(gameButtonColorStateList)
-            binding.rollHeader.setTextColor(color)
-            binding.roll.imageTintList = gameButtonColorStateList
-            binding.rollDone.setTextColor(color)
         }
 
         // Make usability adjustments based on size (only once measured)
@@ -284,7 +250,7 @@ class PlayerViewHolder(
                         GridLayoutManager(itemView.context, rows, RecyclerView.HORIZONTAL, false)
 
                     /**
-                     * Edit Counters Header + Roll Header
+                     * Edit Counters Header
                      */
                     val minHeightToShowEditCountersHeader =
                         res.getDimensionPixelSize(R.dimen.edit_counter_show_header_height_threshold)
@@ -300,8 +266,6 @@ class PlayerViewHolder(
                         res.getDimensionPixelSize(R.dimen.edit_counter_header_large_padding)
                     binding.editCountersHeader.visibility =
                         if (height < minHeightToShowEditCountersHeader) View.GONE else View.VISIBLE
-                    binding.rollHeader.visibility =
-                        if (height < minHeightToShowEditCountersHeader) View.GONE else View.VISIBLE
                     if (height < minHeightForLargeEditCountersHeader) {
                         binding.editCountersHeader.apply {
                             textSize = smallHeaderTextSize
@@ -312,15 +276,6 @@ class PlayerViewHolder(
                                 smallHeaderTextPadding
                             )
                         }
-                        binding.rollHeader.apply {
-                            textSize = smallHeaderTextSize
-                            setPadding(
-                                smallHeaderTextPadding,
-                                smallHeaderTextPadding,
-                                smallHeaderTextPadding,
-                                smallHeaderTextPadding
-                            )
-                        }
                     } else {
                         binding.editCountersHeader.apply {
                             textSize = largeHeaderTextSize
@@ -331,25 +286,6 @@ class PlayerViewHolder(
                                 largeHeaderTextPadding
                             )
                         }
-                        binding.rollHeader.apply {
-                            textSize = largeHeaderTextSize
-                            setPadding(
-                                largeHeaderTextPadding,
-                                largeHeaderTextPadding,
-                                largeHeaderTextPadding,
-                                largeHeaderTextPadding
-                            )
-                        }
-                    }
-
-                    /**
-                     * Hide roll confirm button to save vertical space in small cells
-                     */
-                    val minHeightToShowRollConfirm = res.getDimensionPixelSize(R.dimen.roll_confirm_visibility_threshold)
-                    if (height < minHeightToShowRollConfirm) {
-                        binding.rollDone.visibility = View.GONE
-                    } else {
-                        binding.rollDone.visibility = View.VISIBLE
                     }
 
                     /**
@@ -363,11 +299,8 @@ class PlayerViewHolder(
                         width > minWidthToShowMenuText && height > minHeightToShowMenuText
                     binding.revealedAddCountersLabel.visibility =
                         if (showMenuText) View.VISIBLE else View.GONE
-                    //Rearrange and Roll split the space vertically, do we should split the total height for each calculation
                     binding.revealedRearrangeCountersLabel.visibility =
-                        if (showMenuText && height / 2 > minHeightToShowMenuText) View.VISIBLE else View.GONE
-                    binding.revealedRollLabel.visibility =
-                        if (showMenuText && height / 2 > minHeightToShowMenuText) View.VISIBLE else View.GONE
+                        if (showMenuText) View.VISIBLE else View.GONE
                     return false
                 }
             })
@@ -382,7 +315,6 @@ class PlayerViewHolder(
             binding.editCountersContainer.visibility = View.GONE
             binding.playerContainer.visibility = View.VISIBLE
             binding.revealOptionsMenu.visibility = View.VISIBLE
-            binding.rollContainer.visibility = View.GONE
         } else if (data.currentMenu == GamePlayerUiModel.Menu.EDIT_COUNTERS) {
             binding.playerContainer.visibility = if (pullToReveal) View.VISIBLE else View.GONE
             binding.editCountersContainer.visibility = View.VISIBLE
@@ -390,7 +322,6 @@ class PlayerViewHolder(
             binding.rearrangeCountersRecycler.visibility = View.GONE
             binding.editCountersHeader.setText(R.string.edit_counters_title)
             binding.revealOptionsMenu.visibility = View.GONE
-            binding.rollContainer.visibility = View.GONE
         } else if (data.currentMenu == GamePlayerUiModel.Menu.REARRANGE_COUNTERS) {
             binding.playerContainer.visibility = if (pullToReveal) View.VISIBLE else View.GONE
             binding.editCountersContainer.visibility = View.VISIBLE
@@ -398,12 +329,6 @@ class PlayerViewHolder(
             binding.rearrangeCountersRecycler.visibility = View.VISIBLE
             binding.editCountersHeader.setText(R.string.rearrange_counters_title)
             binding.revealOptionsMenu.visibility = View.GONE
-            binding.rollContainer.visibility = View.GONE
-        } else if (data.currentMenu == GamePlayerUiModel.Menu.ROLL) {
-            binding.playerContainer.visibility = if (pullToReveal) View.VISIBLE else View.GONE
-            binding.editCountersContainer.visibility = View.GONE
-            binding.revealOptionsMenu.visibility = View.GONE
-            binding.rollContainer.visibility = View.VISIBLE
         }
         if (pullToReveal && !revealHintAnimated) {
             if (!revealHintAnimated) {
@@ -438,7 +363,12 @@ class PlayerViewHolder(
             if (glowDrawable is GradientDrawable) {
                 val strokeWidth =
                     itemView.resources.getDimensionPixelSize(R.dimen.player_selected_glow_width)
-                glowDrawable.setStroke(strokeWidth, color)
+                val strokeColor = if (isLightTheme) {
+                    ContextCompat.getColor(itemView.context, R.color.white)
+                } else {
+                    color
+                }
+                glowDrawable.setStroke(strokeWidth, strokeColor)
             }
             if (selectionGlow.visibility != View.VISIBLE) {
                 selectionGlow.visibility = View.VISIBLE
