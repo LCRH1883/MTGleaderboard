@@ -359,16 +359,16 @@ class PlayerViewHolder(
         binding.revealedRearrangeCountersIcon.isEnabled = data.rearrangeButtonEnabled
 
         if (data.isCurrentTurnPlayer) {
-            val glowDrawable = selectionGlow.background?.mutate()
-            if (glowDrawable is GradientDrawable) {
-                val strokeWidth =
-                    itemView.resources.getDimensionPixelSize(R.dimen.player_selected_glow_width)
-                val strokeColor = if (isLightTheme) {
-                    ContextCompat.getColor(itemView.context, R.color.white)
-                } else {
-                    color
+            if (isLightTheme) {
+                selectionGlow.setBackgroundResource(R.drawable.player_selected_glow_light)
+            } else {
+                selectionGlow.setBackgroundResource(R.drawable.player_selected_glow)
+                val glowDrawable = selectionGlow.background?.mutate()
+                if (glowDrawable is GradientDrawable) {
+                    val strokeWidth =
+                        itemView.resources.getDimensionPixelSize(R.dimen.player_selected_glow_width)
+                    glowDrawable.setStroke(strokeWidth, color)
                 }
-                glowDrawable.setStroke(strokeWidth, strokeColor)
             }
             if (selectionGlow.visibility != View.VISIBLE) {
                 selectionGlow.visibility = View.VISIBLE

@@ -11,6 +11,7 @@
     <color name="light_mode_divider_color">@color/light_mode_primary_text</color>
     <color name="light_mode_accent_color">@color/accent_blue</color>
     <color name="selected_yellow">#ffff00</color>
+    <color name="player_glow_light_outer">#66FFE7A3</color>
 
     <color name="dark_mode_ripple_color">#40ffffff</color>
     <color name="dark_mode_black">#121212</color>
