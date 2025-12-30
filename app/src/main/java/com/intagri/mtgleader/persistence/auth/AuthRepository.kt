@@ -5,34 +5,48 @@ import retrofit2.HttpException
 class AuthRepository(
     private val authApi: AuthApi,
     private val cookieJar: PersistentCookieJar,
+    private val userProfileCache: UserProfileCache,
 ) {
     suspend fun register(email: String, username: String, password: String): AuthUser {
-        return authApi.register(RegisterRequest(email = email, username = username, password = password))
+        val user = authApi.register(RegisterRequest(email = email, username = username, password = password))
+        userProfileCache.setUser(user)
+        return user
     }
 
     suspend fun login(email: String, password: String): AuthUser {
-        return authApi.login(LoginRequest(email = email, password = password))
+        val user = authApi.login(LoginRequest(email = email, password = password))
+        userProfileCache.setUser(user)
+        return user
     }
 
     suspend fun loginWithGoogle(idToken: String): AuthUser {
-        return authApi.loginWithGoogle(IdTokenRequest(idToken = idToken))
+        val user = authApi.loginWithGoogle(IdTokenRequest(idToken = idToken))
+        userProfileCache.setUser(user)
+        return user
     }
 
     suspend fun loginWithApple(idToken: String): AuthUser {
-        return authApi.loginWithApple(IdTokenRequest(idToken = idToken))
+        val user = authApi.loginWithApple(IdTokenRequest(idToken = idToken))
+        userProfileCache.setUser(user)
+        return user
     }
 
-    suspend fun getCurrentUser(): AuthUser? {
+    suspend fun getCurrentUser(includeStats: Boolean = false): AuthUser? {
         return try {
-            authApi.getCurrentUser()
+            val user = authApi.getCurrentUser(includeStats = if (includeStats) true else null)
+            userProfileCache.setUser(user)
+            user
         } catch (e: HttpException) {
             if (e.code() == 401) {
+                userProfileCache.setUser(null)
                 null
             } else {
                 throw e
             }
         }
     }
+
+    fun getCachedUser(): AuthUser? = userProfileCache.getUser()
 
     suspend fun logout() {
         try {
@@ -43,5 +57,6 @@ class AuthRepository(
             }
         }
         cookieJar.clear()
+        userProfileCache.setUser(null)
     }
 }

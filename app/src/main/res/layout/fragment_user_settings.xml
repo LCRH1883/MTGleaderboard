@@ -48,6 +48,98 @@
                     style="@style/Header3"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:text="@string/profile_details" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/menu_button_margin"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/avatar_image"
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
+                        android:layout_marginEnd="@dimen/default_padding"
+                        android:contentDescription="@string/profile_avatar"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_skull" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            style="@style/Header3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/display_name_label" />
+
+                        <EditText
+                            android:id="@+id/display_name_input"
+                            style="@style/NameEditText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:hint="@string/display_name_hint"
+                            android:inputType="textPersonName"
+                            tools:text="Player One" />
+
+                        <Button
+                            android:id="@+id/change_avatar_button"
+                            style="@style/MenuButton.Round"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/menu_button_margin"
+                            android:minHeight="48dp"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:paddingTop="10dp"
+                            android:paddingBottom="10dp"
+                            android:text="@string/change_avatar"
+                            android:textSize="16sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/save_profile_button"
+                    style="@style/MenuButton.Round"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/menu_button_margin"
+                    android:minHeight="48dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp"
+                    android:text="@string/save_profile"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/message_text"
+                    style="@style/Label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/menu_button_margin"
+                    android:visibility="gone"
+                    tools:text="Profile updated."
+                    tools:visibility="visible" />
+
+                <TextView
+                    style="@style/Header3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/default_padding"
+                    android:text="@string/account_details" />
+
+                <TextView
+                    style="@style/Header3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/menu_button_margin"
                     android:text="@string/username_label" />
 
                 <TextView
@@ -90,7 +182,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/menu_button_margin"
-                android:text="@string/login" />
+                android:minHeight="48dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:text="@string/login"
+                android:textSize="16sp" />
 
             <Button
                 android:id="@+id/logout_button"
@@ -98,7 +196,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/menu_button_margin"
+                android:minHeight="48dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
                 android:text="@string/logout"
+                android:textSize="16sp"
                 android:visibility="gone"
                 tools:visibility="visible" />
 

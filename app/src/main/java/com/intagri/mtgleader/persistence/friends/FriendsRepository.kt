@@ -3,7 +3,7 @@ package com.intagri.mtgleader.persistence.friends
 class FriendsRepository(
     private val friendsApi: FriendsApi
 ) {
-    suspend fun getFriends(): List<FriendConnection> {
+    suspend fun getFriends(): FriendsOverviewDto {
         return friendsApi.getFriends()
     }
 
@@ -17,9 +17,5 @@ class FriendsRepository(
 
     suspend fun declineRequest(id: String) {
         friendsApi.declineRequest(id)
-    }
-
-    suspend fun cancelRequest(id: String) {
-        friendsApi.cancelRequest(id)
     }
 }

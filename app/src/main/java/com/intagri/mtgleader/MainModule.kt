@@ -8,11 +8,15 @@ import com.intagri.mtgleader.persistence.*
 import com.intagri.mtgleader.persistence.auth.AuthApi
 import com.intagri.mtgleader.persistence.auth.AuthRepository
 import com.intagri.mtgleader.persistence.auth.PersistentCookieJar
+import com.intagri.mtgleader.persistence.auth.UserProfileCache
 import com.intagri.mtgleader.persistence.friends.FriendsApi
 import com.intagri.mtgleader.persistence.friends.FriendsRepository
 import com.intagri.mtgleader.persistence.images.ImageApi
 import com.intagri.mtgleader.persistence.images.ImageRepository
 import com.intagri.mtgleader.persistence.images.ImageRepositoryImpl
+import com.intagri.mtgleader.persistence.stats.StatsApi
+import com.intagri.mtgleader.persistence.stats.StatsRepository
+import com.intagri.mtgleader.persistence.userprofile.UserProfileRepository
 import com.squareup.moshi.Moshi
 import dagger.Module
 import dagger.Provides
@@ -137,8 +141,9 @@ object MainModule {
     fun providesAuthRepository(
         authApi: AuthApi,
         cookieJar: PersistentCookieJar,
+        userProfileCache: UserProfileCache,
     ): AuthRepository {
-        return AuthRepository(authApi, cookieJar)
+        return AuthRepository(authApi, cookieJar, userProfileCache)
     }
 
     @Provides
@@ -156,5 +161,32 @@ object MainModule {
     @Singleton
     fun providesFriendsRepository(friendsApi: FriendsApi): FriendsRepository {
         return FriendsRepository(friendsApi)
+    }
+
+    @Provides
+    @Singleton
+    fun providesStatsApi(okHttpClient: OkHttpClient, moshi: Moshi): StatsApi {
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.API_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(StatsApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun providesStatsRepository(statsApi: StatsApi): StatsRepository {
+        return StatsRepository(statsApi)
+    }
+
+    @Provides
+    @Singleton
+    fun providesUserProfileRepository(
+        @ApplicationContext appContext: Context,
+        authApi: AuthApi,
+        userProfileCache: UserProfileCache,
+    ): UserProfileRepository {
+        return UserProfileRepository(appContext, authApi, userProfileCache)
     }
 }

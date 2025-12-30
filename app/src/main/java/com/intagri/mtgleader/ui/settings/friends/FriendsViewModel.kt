@@ -5,7 +5,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.intagri.mtgleader.livedata.SingleLiveEvent
-import com.intagri.mtgleader.persistence.friends.FriendConnection
+import com.intagri.mtgleader.persistence.friends.FriendRequestDto
+import com.intagri.mtgleader.persistence.friends.FriendsOverviewDto
+import com.intagri.mtgleader.persistence.friends.UserSummaryDto
 import com.intagri.mtgleader.persistence.friends.FriendsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -41,8 +43,8 @@ class FriendsViewModel @Inject constructor(
             try {
                 friendsRepository.sendFriendRequest(username)
                 events.value = FriendsEvent.InviteSent
-                val friends = friendsRepository.getFriends()
-                updateFriends(friends)
+                val overview = friendsRepository.getFriends()
+                updateFriends(overview)
             } catch (e: Exception) {
                 events.value = if (e.isAuthError()) {
                     FriendsEvent.AuthRequired
@@ -62,10 +64,6 @@ class FriendsViewModel @Inject constructor(
         handleRequestAction(id) { friendsRepository.declineRequest(it) }
     }
 
-    fun cancelRequest(id: String?) {
-        handleRequestAction(id) { friendsRepository.cancelRequest(it) }
-    }
-
     private fun handleRequestAction(id: String?, action: suspend (String) -> Unit) {
         if (_loading.value == true) {
             return
@@ -78,8 +76,8 @@ class FriendsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 action(id)
-                val friends = friendsRepository.getFriends()
-                updateFriends(friends)
+                val overview = friendsRepository.getFriends()
+                updateFriends(overview)
             } catch (e: Exception) {
                 events.value = if (e.isAuthError()) {
                     FriendsEvent.AuthRequired
@@ -95,8 +93,8 @@ class FriendsViewModel @Inject constructor(
         _loading.value = true
         viewModelScope.launch {
             try {
-                val friends = friendsRepository.getFriends()
-                updateFriends(friends)
+                val overview = friendsRepository.getFriends()
+                updateFriends(overview)
             } catch (e: Exception) {
                 events.value = if (e.isAuthError()) {
                     FriendsEvent.AuthRequired
@@ -109,35 +107,32 @@ class FriendsViewModel @Inject constructor(
         }
     }
 
-    private fun updateFriends(friends: List<FriendConnection>) {
-        _friends.value = friends.mapNotNull { it.toUiModel() }
+    private fun updateFriends(overview: FriendsOverviewDto) {
+        val incoming = overview.incomingRequests.mapNotNull { it.toUiModel(FriendStatus.INCOMING) }
+        val accepted = overview.friends.mapNotNull { it.toUiModel(FriendStatus.ACCEPTED) }
+        val outgoing = overview.outgoingRequests.mapNotNull { it.toUiModel(FriendStatus.OUTGOING) }
+        _friends.value = incoming + accepted + outgoing
     }
 
     private fun Exception.isAuthError(): Boolean {
         return (this as? HttpException)?.code() == 401
     }
 
-    private fun FriendConnection.toUiModel(): FriendUiModel? {
-        val displayName = username
-            ?: user?.username
-            ?: email
-            ?: user?.email
-            ?: id
-            ?: requestId
-            ?: return null
-        val statusValue = status?.lowercase()
-        val resolvedStatus = when (statusValue) {
-            "incoming", "pending_incoming", "requested", "incoming_request" -> FriendStatus.INCOMING
-            "outgoing", "pending_outgoing", "sent", "requested_outgoing" -> FriendStatus.OUTGOING
-            "accepted", "friend", "friends" -> FriendStatus.ACCEPTED
-            null -> FriendStatus.ACCEPTED
-            else -> FriendStatus.UNKNOWN
-        }
-        val resolvedId = requestId ?: id ?: user?.id
+    private fun UserSummaryDto.toUiModel(status: FriendStatus): FriendUiModel? {
+        val displayName = displayName ?: username ?: id
         return FriendUiModel(
-            id = resolvedId,
+            id = id,
             displayName = displayName,
-            status = resolvedStatus
+            status = status
+        )
+    }
+
+    private fun FriendRequestDto.toUiModel(status: FriendStatus): FriendUiModel? {
+        val displayName = user.displayName ?: user.username ?: user.id
+        return FriendUiModel(
+            id = id,
+            displayName = displayName,
+            status = status
         )
     }
 }
