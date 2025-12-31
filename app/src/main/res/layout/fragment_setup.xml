@@ -316,6 +316,16 @@
     </androidx.core.widget.NestedScrollView>
 
     <Button
+        android:id="@+id/resume_button"
+        style="@style/MenuButton.Round"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/menu_button_margin"
+        android:text="@string/resume_in_progress_game"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <Button
         android:id="@+id/start_button"
         style="@style/MenuButton.Round"
         android:layout_width="match_parent"

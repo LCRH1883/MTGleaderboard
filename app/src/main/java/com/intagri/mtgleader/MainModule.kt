@@ -13,6 +13,7 @@ import com.intagri.mtgleader.persistence.friends.FriendDao
 import com.intagri.mtgleader.persistence.friends.FriendRequestDao
 import com.intagri.mtgleader.persistence.friends.FriendsApi
 import com.intagri.mtgleader.persistence.friends.FriendsRepository
+import com.intagri.mtgleader.persistence.gamesession.GameSessionDao
 import com.intagri.mtgleader.persistence.images.ImageApi
 import com.intagri.mtgleader.persistence.images.ImageRepository
 import com.intagri.mtgleader.persistence.images.ImageRepositoryImpl
@@ -76,7 +77,8 @@ object MainModule {
             .addMigrations(
                 AppDatabase.MIGRATION_1_2,
                 AppDatabase.MIGRATION_2_3,
-                AppDatabase.MIGRATION_3_4
+                AppDatabase.MIGRATION_3_4,
+                AppDatabase.MIGRATION_4_5
             )
             .build()
     }
@@ -113,6 +115,12 @@ object MainModule {
     @Singleton
     fun providesMatchDao(appDatabase: AppDatabase): MatchDao {
         return appDatabase.matchDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providesGameSessionDao(appDatabase: AppDatabase): GameSessionDao {
+        return appDatabase.gameSessionDao()
     }
 
     @Provides

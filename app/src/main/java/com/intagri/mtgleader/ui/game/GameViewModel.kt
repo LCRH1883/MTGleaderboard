@@ -4,41 +4,61 @@ import android.os.SystemClock
 import androidx.lifecycle.*
 import com.intagri.mtgleader.R
 import com.intagri.mtgleader.model.TabletopType
-import com.intagri.mtgleader.livedata.SingleLiveEvent
 import com.intagri.mtgleader.model.counter.CounterModel
 import com.intagri.mtgleader.model.counter.CounterTemplateModel
 import com.intagri.mtgleader.model.player.PlayerModel
 import com.intagri.mtgleader.model.player.PlayerSetupModel
 import com.intagri.mtgleader.persistence.GameRepository
+import com.intagri.mtgleader.persistence.gamesession.GameCounterSnapshot
+import com.intagri.mtgleader.persistence.gamesession.GameParticipantEntity
+import com.intagri.mtgleader.persistence.gamesession.GameParticipantType
+import com.intagri.mtgleader.persistence.gamesession.GameSessionEntity
+import com.intagri.mtgleader.persistence.gamesession.GameSessionRepository
+import com.intagri.mtgleader.persistence.gamesession.GameSessionStatus
+import com.intagri.mtgleader.persistence.gamesession.GameSessionWithParticipants
 import com.intagri.mtgleader.view.counter.edit.CounterSelectionUiModel
 import com.intagri.mtgleader.view.counter.edit.RearrangeCounterUiModel
 import com.intagri.mtgleader.view.TableLayoutPosition
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.lang.IllegalArgumentException
 import java.util.ArrayDeque
+import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewModelScope
+import com.intagri.mtgleader.livedata.SingleLiveEvent
 
 @HiltViewModel
 class GameViewModel @Inject constructor(
     private val gameRepository: GameRepository,
+    private val gameSessionRepository: GameSessionRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     companion object {
         const val DEFAULT_TURN_TIMER_SECONDS = 5 * 60
         const val MAX_OVERTIME_SECONDS = 99 * 60 + 99
+        private const val AUTO_SAVE_INTERVAL_MS = 30_000L
+        private const val SAVE_DEBOUNCE_MS = 500L
     }
 
     private val setupPlayers =
         savedStateHandle.get<List<PlayerSetupModel>>(GameActivity.ARGS_SETUP_PLAYERS)
             ?: throw IllegalArgumentException("PlayerSetupModels must be passed in intent")
 
-    val startingLife = gameRepository.startingLife
-    val tabletopType = gameRepository.tabletopType
+    private val resumeMatchId: String? =
+        savedStateHandle.get<String>(GameActivity.ARGS_RESUME_MATCH_ID)
+    private val resumeTabletopType: TabletopType? =
+        savedStateHandle.get<String>(GameActivity.ARGS_TABLETOP_TYPE)?.let { typeName ->
+            runCatching { TabletopType.valueOf(typeName) }.getOrNull()
+        }
+    private val resumeStartingLife: Int? =
+        savedStateHandle.get<Int>(GameActivity.ARGS_STARTING_LIFE)
+
+    private val startingLife = resumeStartingLife ?: gameRepository.startingLife
+    val tabletopType = resumeTabletopType ?: gameRepository.tabletopType
 
     //Maps player ids to their available counters
     private val availableCountersMap: MutableMap<Int, List<CounterTemplateModel>> = mutableMapOf()
@@ -106,9 +126,22 @@ class GameViewModel @Inject constructor(
     )
     private var turnTimerJob: Job? = null
     private var gameClockJob: Job? = null
+    private var autoSaveJob: Job? = null
+    private var pendingSaveJob: Job? = null
     private var gameStartElapsedMs: Long = SystemClock.elapsedRealtime()
     private var gamePausedAtMs: Long? = null
     private var gamePausedDurationMs: Long = 0L
+    private var currentTurnStartElapsedMs: Long? = null
+    private var turnPausedAtMs: Long? = null
+
+    private val playerTurnTimeMs: MutableMap<Int, Long> = mutableMapOf()
+    private val playerTurnsTaken: MutableMap<Int, Int> = mutableMapOf()
+    private val eliminationInfo: MutableMap<Int, EliminationInfo> = mutableMapOf()
+
+    private var localMatchId: String = resumeMatchId ?: UUID.randomUUID().toString()
+    private var createdAtEpoch: Long = System.currentTimeMillis()
+    private var startedAtEpoch: Long? = createdAtEpoch
+    private var sessionReady = false
 
     /**
      * Maps player id to an ordered list of selected counter template ids
@@ -122,6 +155,15 @@ class GameViewModel @Inject constructor(
         _hideNavigation.value = gameRepository.hideNavigation
         initializePlayers()
         startGameClock()
+        startAutoSave()
+        if (resumeMatchId != null) {
+            viewModelScope.launch {
+                restoreSession(resumeMatchId)
+            }
+        } else {
+            sessionReady = true
+            scheduleSave(true)
+        }
     }
 
 
@@ -129,6 +171,9 @@ class GameViewModel @Inject constructor(
         playerMap.clear()
         availableCountersMap.clear()
         pendingCounterSelectionMap.clear()
+        playerTurnTimeMs.clear()
+        playerTurnsTaken.clear()
+        eliminationInfo.clear()
         for (i in setupPlayers.indices) {
 
             val player = GamePlayerUiModel(
@@ -143,6 +188,8 @@ class GameViewModel @Inject constructor(
             )
             playerMap[i] = player
             availableCountersMap[i] = setupPlayers[i].profile?.counters ?: emptyList()
+            playerTurnTimeMs[player.model.id] = 0L
+            playerTurnsTaken[player.model.id] = 0
 
             /**
              * Make sure pending map of selection changes is in sync with whatever
@@ -200,8 +247,10 @@ class GameViewModel @Inject constructor(
         startingPlayerSelectionEnabled = false
         _currentTurnPlayerId.value = playerId
         turnHistory.clear()
+        currentTurnStartElapsedMs = SystemClock.elapsedRealtime()
         resetTurnTimer()
         updatePlayerState()
+        scheduleSave()
     }
 
     fun selectRandomStartingPlayer() {
@@ -214,8 +263,10 @@ class GameViewModel @Inject constructor(
             startingPlayerSelectionEnabled = false
             _currentTurnPlayerId.value = startingPlayerId
             turnHistory.clear()
+            currentTurnStartElapsedMs = SystemClock.elapsedRealtime()
             resetTurnTimer()
             updatePlayerState()
+            scheduleSave()
         }
     }
 
@@ -224,7 +275,9 @@ class GameViewModel @Inject constructor(
             it.model = it.model.copy(
                 life = it.model.life + lifeDifference
             )
+            recordEliminationIfNeeded(playerId)
             _players.value = playerMap.values.toList()
+            scheduleSave()
         }
     }
 
@@ -239,6 +292,7 @@ class GameViewModel @Inject constructor(
                     counter.copy(amount = counter.amount + amountDifference)
                 player.model = player.model.copy(counters = countersList)
                 _players.value = playerMap.values.toList()
+                scheduleSave()
             }
         }
     }
@@ -366,6 +420,7 @@ class GameViewModel @Inject constructor(
                 uiModel.newCounterAdded = newCounter
                 uiModel.currentMenu = GamePlayerUiModel.Menu.MAIN
                 _players.value = playerMap.values.toList()
+                scheduleSave()
             }
         }
     }
@@ -427,6 +482,7 @@ class GameViewModel @Inject constructor(
     fun setPlayerRotationClockwise(clockwise: Boolean) {
         _playerRotationClockwise.value = clockwise
         updatePlayerState()
+        scheduleSave()
     }
 
     fun setTurnTimerEnabled(enabled: Boolean) {
@@ -437,6 +493,7 @@ class GameViewModel @Inject constructor(
             _turnTimerOvertime.value = false
             stopTurnTimer()
         }
+        scheduleSave()
     }
 
     fun setTurnTimerDuration(minutes: Int, seconds: Int) {
@@ -453,6 +510,7 @@ class GameViewModel @Inject constructor(
         } else {
             stopTurnTimer()
         }
+        scheduleSave()
     }
 
     fun endTurn(playerId: Int) {
@@ -468,13 +526,16 @@ class GameViewModel @Inject constructor(
         val nextIndex = (currentIndex + 1) % order.size
         val nextPlayerId = order[nextIndex]
         val incrementedTurn = startingPlayerId != null && nextPlayerId == startingPlayerId
+        recordTurnEnd(SystemClock.elapsedRealtime())
         turnHistory.addLast(TurnHistoryEntry(currentId, incrementedTurn))
         _currentTurnPlayerId.value = nextPlayerId
         if (incrementedTurn) {
             _turnCount.value = (_turnCount.value ?: 1) + 1
         }
+        currentTurnStartElapsedMs = SystemClock.elapsedRealtime()
         resetTurnTimer()
         updatePlayerState()
+        scheduleSave()
     }
 
     fun goBackTurn() {
@@ -487,8 +548,10 @@ class GameViewModel @Inject constructor(
             val currentCount = _turnCount.value ?: 1
             _turnCount.value = maxOf(1, currentCount - 1)
         }
+        currentTurnStartElapsedMs = SystemClock.elapsedRealtime()
         resetTurnTimer()
         updatePlayerState()
+        scheduleSave()
     }
 
     private fun getTurnOrderIds(): List<Int> {
@@ -517,14 +580,20 @@ class GameViewModel @Inject constructor(
     }
 
     fun resetGame() {
+        val now = System.currentTimeMillis()
+        createdAtEpoch = now
+        startedAtEpoch = now
         startingPlayerId = null
         startingPlayerSelectionEnabled = false
         turnHistory.clear()
         _currentTurnPlayerId.value = null
         _turnCount.value = 1
+        currentTurnStartElapsedMs = null
+        turnPausedAtMs = null
         resetGameClock()
         resetTurnTimer()
         initializePlayers()
+        scheduleSave(true)
     }
 
     fun pauseGame() {
@@ -533,8 +602,12 @@ class GameViewModel @Inject constructor(
         }
         _gamePaused.value = true
         gamePausedAtMs = SystemClock.elapsedRealtime()
+        if (turnPausedAtMs == null) {
+            turnPausedAtMs = gamePausedAtMs
+        }
         stopTurnTimer()
         updateGameClock()
+        scheduleSave()
     }
 
     fun resumeGame() {
@@ -545,11 +618,16 @@ class GameViewModel @Inject constructor(
         val pausedAt = gamePausedAtMs ?: now
         gamePausedDurationMs += now - pausedAt
         gamePausedAtMs = null
+        turnPausedAtMs?.let {
+            currentTurnStartElapsedMs = currentTurnStartElapsedMs?.plus(now - it)
+        }
+        turnPausedAtMs = null
         _gamePaused.value = false
         if (_turnTimerEnabled.value == true && _currentTurnPlayerId.value != null) {
             startTurnTimer()
         }
         updateGameClock()
+        scheduleSave()
     }
 
     fun togglePause() {
@@ -564,6 +642,221 @@ class GameViewModel @Inject constructor(
         val previousPlayerId: Int,
         val incrementedTurn: Boolean,
     )
+
+    private data class EliminationInfo(
+        val eliminatedTurnNumber: Int,
+        val eliminatedDuringSeatIndex: Int?,
+    )
+
+    private fun recordTurnEnd(nowMs: Long) {
+        val currentId = _currentTurnPlayerId.value ?: return
+        val startedAt = currentTurnStartElapsedMs ?: nowMs
+        val elapsedMs = (nowMs - startedAt).coerceAtLeast(0L)
+        playerTurnTimeMs[currentId] = (playerTurnTimeMs[currentId] ?: 0L) + elapsedMs
+        playerTurnsTaken[currentId] = (playerTurnsTaken[currentId] ?: 0) + 1
+    }
+
+    private fun recordEliminationIfNeeded(playerId: Int) {
+        if (eliminationInfo.containsKey(playerId)) {
+            return
+        }
+        val life = playerMap[playerId]?.model?.life ?: return
+        if (life > 0) {
+            return
+        }
+        eliminationInfo[playerId] = EliminationInfo(
+            eliminatedTurnNumber = _turnCount.value ?: 1,
+            eliminatedDuringSeatIndex = _currentTurnPlayerId.value
+        )
+    }
+
+    private fun startAutoSave() {
+        autoSaveJob?.cancel()
+        autoSaveJob = viewModelScope.launch {
+            while (true) {
+                delay(AUTO_SAVE_INTERVAL_MS)
+                if (sessionReady) {
+                    persistSnapshot()
+                }
+            }
+        }
+    }
+
+    private fun scheduleSave(immediate: Boolean = false) {
+        if (!sessionReady) {
+            return
+        }
+        pendingSaveJob?.cancel()
+        pendingSaveJob = viewModelScope.launch {
+            if (!immediate) {
+                delay(SAVE_DEBOUNCE_MS)
+            }
+            persistSnapshot()
+        }
+    }
+
+    fun requestImmediateSave() {
+        if (!sessionReady) {
+            return
+        }
+        viewModelScope.launch {
+            persistSnapshot()
+        }
+    }
+
+    private suspend fun persistSnapshot() {
+        val currentTurnNumber = _turnCount.value ?: 1
+        val currentTurnPlayerId = _currentTurnPlayerId.value
+        val nowElapsedMs = SystemClock.elapsedRealtime()
+        val currentTurnElapsedMs = when {
+            currentTurnPlayerId == null || currentTurnStartElapsedMs == null -> 0L
+            _gamePaused.value == true && turnPausedAtMs != null ->
+                (turnPausedAtMs ?: nowElapsedMs) - (currentTurnStartElapsedMs ?: nowElapsedMs)
+            _gamePaused.value == true -> 0L
+            else -> (nowElapsedMs - (currentTurnStartElapsedMs ?: nowElapsedMs)).coerceAtLeast(0L)
+        }.coerceAtLeast(0L)
+        val session = GameSessionEntity(
+            localMatchId = localMatchId,
+            clientMatchId = localMatchId,
+            createdAtEpoch = createdAtEpoch,
+            startedAtEpoch = startedAtEpoch,
+            endedAtEpoch = null,
+            tabletopType = tabletopType.name,
+            status = GameSessionStatus.IN_PROGRESS,
+            startingSeatIndex = startingPlayerId,
+            currentTurnNumber = currentTurnNumber,
+            currentActiveSeatIndex = currentTurnPlayerId,
+            turnOwnerSeatIndex = currentTurnPlayerId,
+            turnRotationClockwise = _playerRotationClockwise.value != false,
+            turnTimerEnabled = _turnTimerEnabled.value == true,
+            turnTimerDurationSeconds = _turnTimerDurationSeconds.value ?: DEFAULT_TURN_TIMER_SECONDS,
+            turnTimerSeconds = _turnTimerSeconds.value ?: DEFAULT_TURN_TIMER_SECONDS,
+            turnTimerOvertime = _turnTimerOvertime.value == true,
+            gamePaused = _gamePaused.value == true,
+            gameElapsedSeconds = _gameElapsedSeconds.value ?: 0L,
+            pendingSync = false,
+            backendMatchId = null,
+            updatedAtEpoch = System.currentTimeMillis(),
+        )
+        val participants = playerMap.entries.mapNotNull { (seatIndex, player) ->
+            val setupPlayer = setupPlayers.getOrNull(seatIndex) ?: return@mapNotNull null
+            val displayName = setupPlayer.profile?.name ?: "Player ${seatIndex + 1}"
+            val elimination = eliminationInfo[seatIndex]
+            val baseTurnTimeMs = playerTurnTimeMs[seatIndex] ?: 0L
+            val totalTurnTimeMs = if (seatIndex == currentTurnPlayerId) {
+                baseTurnTimeMs + currentTurnElapsedMs
+            } else {
+                baseTurnTimeMs
+            }
+            GameParticipantEntity(
+                localMatchId = localMatchId,
+                seatIndex = seatIndex,
+                participantType = GameParticipantType.LOCAL_PROFILE,
+                profileName = setupPlayer.profile?.name,
+                displayName = displayName,
+                colorName = setupPlayer.color.name,
+                startingLife = startingLife,
+                currentLife = player.model.life,
+                countersJson = gameSessionRepository.encodeCounters(player.model.counters),
+                eliminatedTurnNumber = elimination?.eliminatedTurnNumber,
+                eliminatedDuringSeatIndex = elimination?.eliminatedDuringSeatIndex,
+                place = null,
+                totalTurnTimeMs = totalTurnTimeMs,
+                turnsTaken = playerTurnsTaken[seatIndex],
+            )
+        }
+        gameSessionRepository.saveSnapshot(session, participants)
+    }
+
+    private suspend fun restoreSession(matchId: String) {
+        val snapshot = gameSessionRepository.getSession(matchId)
+        if (snapshot == null) {
+            sessionReady = true
+            scheduleSave(true)
+            return
+        }
+        applySessionState(snapshot)
+        sessionReady = true
+    }
+
+    private fun applySessionState(snapshot: GameSessionWithParticipants) {
+        val session = snapshot.session
+        localMatchId = session.localMatchId
+        createdAtEpoch = session.createdAtEpoch
+        startedAtEpoch = session.startedAtEpoch
+        startingPlayerId = session.startingSeatIndex
+        startingPlayerSelectionEnabled = false
+        _turnCount.value = session.currentTurnNumber
+        _currentTurnPlayerId.value = session.currentActiveSeatIndex
+        _playerRotationClockwise.value = session.turnRotationClockwise
+        _turnTimerEnabled.value = session.turnTimerEnabled
+        _turnTimerDurationSeconds.value = session.turnTimerDurationSeconds
+        _turnTimerSeconds.value = session.turnTimerSeconds
+        _turnTimerOvertime.value = session.turnTimerOvertime
+        applyGameClockState(session.gameElapsedSeconds, session.gamePaused)
+
+        playerTurnTimeMs.clear()
+        playerTurnsTaken.clear()
+        eliminationInfo.clear()
+
+        snapshot.participants.forEach { participant ->
+            val playerId = participant.seatIndex
+            val uiModel = playerMap[playerId] ?: return@forEach
+            val counters = resolveCounters(
+                playerId,
+                gameSessionRepository.decodeCounters(participant.countersJson)
+            )
+            uiModel.model = uiModel.model.copy(
+                life = participant.currentLife,
+                counters = counters,
+            )
+            pendingCounterSelectionMap[playerId] = counters.map { it.template.id }.toMutableList()
+            uiModel.counterSelections = generateSelectionUiModelsForPlayer(playerId)
+            uiModel.rearrangeCounters = generateRearrangeUiModelsForPlayer(playerId)
+            playerTurnTimeMs[playerId] = participant.totalTurnTimeMs ?: 0L
+            playerTurnsTaken[playerId] = participant.turnsTaken ?: 0
+            if (participant.eliminatedTurnNumber != null) {
+                eliminationInfo[playerId] = EliminationInfo(
+                    participant.eliminatedTurnNumber,
+                    participant.eliminatedDuringSeatIndex
+                )
+            }
+        }
+
+        currentTurnStartElapsedMs =
+            if (_currentTurnPlayerId.value != null) SystemClock.elapsedRealtime() else null
+        updatePlayerState()
+
+        if (_gamePaused.value == true ||
+            _currentTurnPlayerId.value == null ||
+            _turnTimerEnabled.value != true
+        ) {
+            stopTurnTimer()
+        } else {
+            startTurnTimer()
+        }
+    }
+
+    private fun applyGameClockState(elapsedSeconds: Long, paused: Boolean) {
+        val now = SystemClock.elapsedRealtime()
+        gameStartElapsedMs = now - elapsedSeconds * 1000L
+        gamePausedDurationMs = 0L
+        gamePausedAtMs = if (paused) now else null
+        _gamePaused.value = paused
+        _gameElapsedSeconds.value = elapsedSeconds
+    }
+
+    private fun resolveCounters(
+        playerId: Int,
+        snapshots: List<GameCounterSnapshot>
+    ): List<CounterModel> {
+        val available = availableCountersMap[playerId].orEmpty()
+        return snapshots.mapNotNull { snapshot ->
+            available.find { it.id == snapshot.templateId }?.let { template ->
+                CounterModel(snapshot.amount, template)
+            }
+        }
+    }
 
     private fun resetTurnTimer() {
         val durationSeconds = _turnTimerDurationSeconds.value ?: DEFAULT_TURN_TIMER_SECONDS
@@ -644,5 +937,11 @@ class GameViewModel @Inject constructor(
         val effectiveNow = gamePausedAtMs ?: now
         val elapsedMs = (effectiveNow - gameStartElapsedMs - gamePausedDurationMs).coerceAtLeast(0L)
         _gameElapsedSeconds.postValue(elapsedMs / 1000L)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        autoSaveJob?.cancel()
+        pendingSaveJob?.cancel()
     }
 }

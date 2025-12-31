@@ -11,6 +11,9 @@ import com.intagri.mtgleader.persistence.friends.FriendDao
 import com.intagri.mtgleader.persistence.friends.FriendEntity
 import com.intagri.mtgleader.persistence.friends.FriendRequestDao
 import com.intagri.mtgleader.persistence.friends.FriendRequestEntity
+import com.intagri.mtgleader.persistence.gamesession.GameParticipantEntity
+import com.intagri.mtgleader.persistence.gamesession.GameSessionDao
+import com.intagri.mtgleader.persistence.gamesession.GameSessionEntity
 import com.intagri.mtgleader.persistence.matches.MatchDao
 import com.intagri.mtgleader.persistence.matches.MatchEntity
 import com.intagri.mtgleader.persistence.sync.SyncMetadataDao
@@ -29,10 +32,12 @@ import com.intagri.mtgleader.persistence.userprofile.UserProfileEntity
         FriendEntity::class,
         FriendRequestEntity::class,
         MatchEntity::class,
+        GameSessionEntity::class,
+        GameParticipantEntity::class,
         SyncQueueEntity::class,
         SyncMetadataEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -41,6 +46,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun friendDao(): FriendDao
     abstract fun friendRequestDao(): FriendRequestDao
     abstract fun matchDao(): MatchDao
+    abstract fun gameSessionDao(): GameSessionDao
     abstract fun syncQueueDao(): SyncQueueDao
     abstract fun syncMetadataDao(): SyncMetadataDao
 
@@ -136,6 +142,61 @@ abstract class AppDatabase : RoomDatabase() {
                         payloadJson TEXT NOT NULL,
                         lastError TEXT,
                         syncedAtEpoch INTEGER
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS game_sessions (
+                        localMatchId TEXT NOT NULL PRIMARY KEY,
+                        clientMatchId TEXT NOT NULL,
+                        createdAtEpoch INTEGER NOT NULL,
+                        startedAtEpoch INTEGER,
+                        endedAtEpoch INTEGER,
+                        tabletopType TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        startingSeatIndex INTEGER,
+                        currentTurnNumber INTEGER NOT NULL,
+                        currentActiveSeatIndex INTEGER,
+                        turnOwnerSeatIndex INTEGER,
+                        turnRotationClockwise INTEGER NOT NULL,
+                        turnTimerEnabled INTEGER NOT NULL,
+                        turnTimerDurationSeconds INTEGER NOT NULL,
+                        turnTimerSeconds INTEGER NOT NULL,
+                        turnTimerOvertime INTEGER NOT NULL,
+                        gamePaused INTEGER NOT NULL,
+                        gameElapsedSeconds INTEGER NOT NULL,
+                        pendingSync INTEGER NOT NULL,
+                        backendMatchId TEXT,
+                        updatedAtEpoch INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS game_participants (
+                        localMatchId TEXT NOT NULL,
+                        seatIndex INTEGER NOT NULL,
+                        participantType TEXT NOT NULL,
+                        profileName TEXT,
+                        userId TEXT,
+                        guestName TEXT,
+                        displayName TEXT NOT NULL,
+                        colorName TEXT NOT NULL,
+                        startingLife INTEGER NOT NULL,
+                        currentLife INTEGER NOT NULL,
+                        countersJson TEXT,
+                        eliminatedTurnNumber INTEGER,
+                        eliminatedDuringSeatIndex INTEGER,
+                        place INTEGER,
+                        totalTurnTimeMs INTEGER,
+                        turnsTaken INTEGER,
+                        PRIMARY KEY(localMatchId, seatIndex)
                     )
                     """.trimIndent()
                 )

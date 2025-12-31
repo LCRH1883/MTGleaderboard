@@ -6,12 +6,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.intagri.mtgleader.model.TabletopType
 import com.intagri.mtgleader.model.player.PlayerColor
-import com.intagri.mtgleader.model.counter.CounterTemplateModel
 import com.intagri.mtgleader.model.player.PlayerSetupModel
 import com.intagri.mtgleader.model.player.PlayerProfileModel
 import com.intagri.mtgleader.persistence.GameRepository
 import com.intagri.mtgleader.persistence.ProfileRepository
+import com.intagri.mtgleader.persistence.gamesession.GameSessionRepository
+import com.intagri.mtgleader.persistence.gamesession.GameSessionWithParticipants
 import com.intagri.mtgleader.ui.settings.profiles.manage.ProfileUiModel
+import com.intagri.mtgleader.util.GameSetupUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
@@ -22,6 +24,7 @@ import javax.inject.Inject
 class SetupViewModel @Inject constructor(
     private val gameRepository: GameRepository,
     private val profilesRepository: ProfileRepository,
+    private val gameSessionRepository: GameSessionRepository,
 ) : ViewModel() {
 
     private val _startingLife = MutableLiveData<Int>()
@@ -47,6 +50,9 @@ class SetupViewModel @Inject constructor(
 
     private val _showCustomizeLayoutButton = MutableLiveData<Boolean>(false)
     val showCustomizeLayoutButton: LiveData<Boolean> get() = _showCustomizeLayoutButton
+
+    private val _resumeGameInfo = MutableLiveData<ResumeGameInfo?>()
+    val resumeGameInfo: LiveData<ResumeGameInfo?> get() = _resumeGameInfo
 
     //Generate 8 unique random colors from list to use for player creation
     private val playerColors = PlayerColor.allColors()
@@ -81,6 +87,10 @@ class SetupViewModel @Inject constructor(
                     setNumberOfPlayers(gameRepository.numberOfPlayers)
                     _keepScreenOn.value = gameRepository.keepScreenOn
                     _hideNavigation.value = gameRepository.hideNavigation
+                    _resumeGameInfo.value = buildResumeInfo(
+                        gameSessionRepository.getLatestInProgress(),
+                        it
+                    )
                 }
         }
     }
@@ -180,33 +190,45 @@ class SetupViewModel @Inject constructor(
      * change after the fact
      */
     fun getSetupPlayersWithColorCounters(): List<PlayerSetupModel> {
-        return _setupPlayers.value?.let { allPlayers ->
-            var currCounterId = -1
-            val allGameColors = allPlayers.map {
-                it.color
-            }.toSet()
-            val allGameColorCounters = allGameColors.map {
-                val counter = CounterTemplateModel(
-                    id = currCounterId,
-                    color = it,
-                    startingValue = 0,
-                )
-                currCounterId--
-                counter
-            }
-            allPlayers.map { player ->
-                player.profile?.let { profile ->
-                    player.copy(
-                        profile = profile.copy(
-                            counters = profile.counters.plus(
-                                allGameColorCounters.filter {
-                                    player.color != it.color
-                                }
-                            )
-                        )
-                    )
-                } ?: player
-            }
-        } ?: emptyList()
+        return GameSetupUtils.applyColorCounters(_setupPlayers.value ?: emptyList())
+    }
+
+    private fun buildResumeInfo(
+        session: GameSessionWithParticipants?,
+        profiles: List<PlayerProfileModel>
+    ): ResumeGameInfo? {
+        val resumeSession = session ?: return null
+        if (resumeSession.participants.isEmpty()) {
+            return null
+        }
+        val profilesByName = profiles.associateBy { it.name }
+        val defaultProfile = profiles.find { it.name == PlayerProfileModel.NAME_DEFAULT }
+        val setupPlayers = resumeSession.participants.sortedBy { it.seatIndex }.map { participant ->
+            val profile = participant.profileName?.let { profilesByName[it] } ?: defaultProfile
+            val color = runCatching {
+                PlayerColor.valueOf(participant.colorName)
+            }.getOrDefault(PlayerColor.NONE)
+            PlayerSetupModel(
+                id = participant.seatIndex,
+                profile = profile,
+                color = color,
+            )
+        }
+        return ResumeGameInfo(
+            localMatchId = resumeSession.session.localMatchId,
+            tabletopType = runCatching {
+                TabletopType.valueOf(resumeSession.session.tabletopType)
+            }.getOrDefault(gameRepository.tabletopType),
+            startingLife = resumeSession.participants.firstOrNull()?.startingLife
+                ?: gameRepository.startingLife,
+            setupPlayers = GameSetupUtils.applyColorCounters(setupPlayers),
+        )
     }
 }
+
+data class ResumeGameInfo(
+    val localMatchId: String,
+    val tabletopType: TabletopType,
+    val startingLife: Int,
+    val setupPlayers: List<PlayerSetupModel>,
+)

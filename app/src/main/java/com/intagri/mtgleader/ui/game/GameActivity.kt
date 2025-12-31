@@ -60,10 +60,27 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
     companion object {
         const val TAG_GAME_OPTIONS = "tag_game_options"
         const val ARGS_SETUP_PLAYERS = "args_setup_players"
+        const val ARGS_RESUME_MATCH_ID = "args_resume_match_id"
+        const val ARGS_TABLETOP_TYPE = "args_tabletop_type"
+        const val ARGS_STARTING_LIFE = "args_starting_life"
         fun startIntentFromSetup(context: Context, players: List<PlayerSetupModel>): Intent {
             return Intent(context, GameActivity::class.java).putParcelableArrayListExtra(
                 ARGS_SETUP_PLAYERS, ArrayList(players)
             )
+        }
+
+        fun startIntentFromResume(
+            context: Context,
+            localMatchId: String,
+            players: List<PlayerSetupModel>,
+            tabletopType: TabletopType,
+            startingLife: Int,
+        ): Intent {
+            return Intent(context, GameActivity::class.java)
+                .putParcelableArrayListExtra(ARGS_SETUP_PLAYERS, ArrayList(players))
+                .putExtra(ARGS_RESUME_MATCH_ID, localMatchId)
+                .putExtra(ARGS_TABLETOP_TYPE, tabletopType.name)
+                .putExtra(ARGS_STARTING_LIFE, startingLife)
         }
     }
 
@@ -190,6 +207,11 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        viewModel.requestImmediateSave()
     }
 
     private fun renderPlayers(players: List<GamePlayerUiModel>) {

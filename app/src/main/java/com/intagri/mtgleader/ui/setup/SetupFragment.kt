@@ -55,6 +55,7 @@ class SetupFragment : Fragment(), CompoundButton.OnCheckedChangeListener {
     private lateinit var tabletopLayoutButtonB: View
     private lateinit var tabletopLayoutAdapterB: TabletopLayoutButtonAdapter
     private lateinit var tabletopListLayoutButton: LinearLayout
+    private lateinit var resumeButton: View
     private lateinit var startButton: View
     private lateinit var toolbar: Toolbar
 
@@ -213,6 +214,21 @@ class SetupFragment : Fragment(), CompoundButton.OnCheckedChangeListener {
             customizeLayoutButton.visibility = if (it) View.VISIBLE else View.GONE
         }
 
+        resumeButton = view.findViewById(R.id.resume_button)
+        resumeButton.setOnClickListener {
+            viewModel.resumeGameInfo.value?.let { resumeInfo ->
+                startActivity(
+                    GameActivity.startIntentFromResume(
+                        requireContext(),
+                        resumeInfo.localMatchId,
+                        resumeInfo.setupPlayers,
+                        resumeInfo.tabletopType,
+                        resumeInfo.startingLife,
+                    )
+                )
+            }
+        }
+
         startButton = view.findViewById(R.id.start_button)
         startButton.setOnClickListener {
             if (viewModel.selectedTabletopType != TabletopType.NONE) {
@@ -319,6 +335,10 @@ class SetupFragment : Fragment(), CompoundButton.OnCheckedChangeListener {
                     }
                 }
             }
+        }
+
+        viewModel.resumeGameInfo.observe(viewLifecycleOwner) { resumeInfo ->
+            resumeButton.visibility = if (resumeInfo == null) View.GONE else View.VISIBLE
         }
     }
 
