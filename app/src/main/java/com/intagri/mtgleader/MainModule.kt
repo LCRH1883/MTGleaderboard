@@ -9,13 +9,22 @@ import com.intagri.mtgleader.persistence.auth.AuthApi
 import com.intagri.mtgleader.persistence.auth.AuthRepository
 import com.intagri.mtgleader.persistence.auth.PersistentCookieJar
 import com.intagri.mtgleader.persistence.auth.UserProfileCache
+import com.intagri.mtgleader.persistence.friends.FriendDao
+import com.intagri.mtgleader.persistence.friends.FriendRequestDao
 import com.intagri.mtgleader.persistence.friends.FriendsApi
 import com.intagri.mtgleader.persistence.friends.FriendsRepository
 import com.intagri.mtgleader.persistence.images.ImageApi
 import com.intagri.mtgleader.persistence.images.ImageRepository
 import com.intagri.mtgleader.persistence.images.ImageRepositoryImpl
+import com.intagri.mtgleader.persistence.matches.MatchApi
+import com.intagri.mtgleader.persistence.matches.MatchDao
+import com.intagri.mtgleader.persistence.matches.MatchRepository
+import com.intagri.mtgleader.persistence.sync.SyncMetadataDao
+import com.intagri.mtgleader.persistence.sync.SyncQueueDao
 import com.intagri.mtgleader.persistence.stats.StatsApi
 import com.intagri.mtgleader.persistence.stats.StatsRepository
+import com.intagri.mtgleader.persistence.userprofile.UserProfileDao
+import com.intagri.mtgleader.persistence.userprofile.UserProfileLocalStore
 import com.intagri.mtgleader.persistence.userprofile.UserProfileRepository
 import com.squareup.moshi.Moshi
 import dagger.Module
@@ -64,7 +73,11 @@ object MainModule {
             AppDatabase::class.java,
             "template_database"
         )
-            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .addMigrations(
+                AppDatabase.MIGRATION_1_2,
+                AppDatabase.MIGRATION_2_3,
+                AppDatabase.MIGRATION_3_4
+            )
             .build()
     }
 
@@ -76,6 +89,42 @@ object MainModule {
         legacyDatastore: LegacyDatastore
     ): MigrationHelper {
         return MigrationHelper(datastore, legacyDatastore, appDatabase)
+    }
+
+    @Provides
+    @Singleton
+    fun providesUserProfileDao(appDatabase: AppDatabase): UserProfileDao {
+        return appDatabase.userProfileDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providesFriendDao(appDatabase: AppDatabase): FriendDao {
+        return appDatabase.friendDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providesFriendRequestDao(appDatabase: AppDatabase): FriendRequestDao {
+        return appDatabase.friendRequestDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providesMatchDao(appDatabase: AppDatabase): MatchDao {
+        return appDatabase.matchDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providesSyncQueueDao(appDatabase: AppDatabase): SyncQueueDao {
+        return appDatabase.syncQueueDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providesSyncMetadataDao(appDatabase: AppDatabase): SyncMetadataDao {
+        return appDatabase.syncMetadataDao()
     }
 
     @Provides
@@ -142,8 +191,9 @@ object MainModule {
         authApi: AuthApi,
         cookieJar: PersistentCookieJar,
         userProfileCache: UserProfileCache,
+        userProfileLocalStore: UserProfileLocalStore,
     ): AuthRepository {
-        return AuthRepository(authApi, cookieJar, userProfileCache)
+        return AuthRepository(authApi, cookieJar, userProfileCache, userProfileLocalStore)
     }
 
     @Provides
@@ -159,8 +209,57 @@ object MainModule {
 
     @Provides
     @Singleton
-    fun providesFriendsRepository(friendsApi: FriendsApi): FriendsRepository {
-        return FriendsRepository(friendsApi)
+    fun providesFriendsRepository(
+        friendsApi: FriendsApi,
+        appDatabase: AppDatabase,
+        friendDao: FriendDao,
+        friendRequestDao: FriendRequestDao,
+        syncQueueDao: SyncQueueDao,
+        syncMetadataDao: SyncMetadataDao,
+        moshi: Moshi,
+        @ApplicationContext appContext: Context,
+    ): FriendsRepository {
+        return FriendsRepository(
+            friendsApi,
+            appDatabase,
+            friendDao,
+            friendRequestDao,
+            syncQueueDao,
+            syncMetadataDao,
+            moshi,
+            appContext,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun providesMatchApi(okHttpClient: OkHttpClient, moshi: Moshi): MatchApi {
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.API_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(MatchApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun providesMatchRepository(
+        matchApi: MatchApi,
+        matchDao: MatchDao,
+        syncQueueDao: SyncQueueDao,
+        userProfileLocalStore: UserProfileLocalStore,
+        moshi: Moshi,
+        @ApplicationContext appContext: Context,
+    ): MatchRepository {
+        return MatchRepository(
+            matchApi,
+            matchDao,
+            syncQueueDao,
+            userProfileLocalStore,
+            moshi,
+            appContext,
+        )
     }
 
     @Provides

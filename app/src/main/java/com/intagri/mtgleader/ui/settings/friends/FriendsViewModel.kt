@@ -8,24 +8,32 @@ import androidx.lifecycle.viewModelScope
 import com.intagri.mtgleader.BuildConfig
 import com.intagri.mtgleader.livedata.SingleLiveEvent
 import com.intagri.mtgleader.persistence.friends.FriendAvatarStore
-import com.intagri.mtgleader.persistence.friends.FriendConnectionDto
+import com.intagri.mtgleader.persistence.friends.FriendDao
+import com.intagri.mtgleader.persistence.friends.FriendEntity
+import com.intagri.mtgleader.persistence.friends.FriendRequestDao
+import com.intagri.mtgleader.persistence.friends.FriendRequestEntity
 import com.intagri.mtgleader.persistence.friends.FriendsRepository
-import com.intagri.mtgleader.persistence.friends.UserSummaryDto
 import com.intagri.mtgleader.persistence.images.ImageRepository
+import com.intagri.mtgleader.persistence.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import retrofit2.HttpException
 import javax.inject.Inject
 
 @HiltViewModel
 class FriendsViewModel @Inject constructor(
+    @ApplicationContext private val appContext: android.content.Context,
     private val friendsRepository: FriendsRepository,
     private val imageRepository: ImageRepository,
     private val friendAvatarStore: FriendAvatarStore,
+    private val friendDao: FriendDao,
+    private val friendRequestDao: FriendRequestDao,
 ) : ViewModel() {
 
     private val _friends = MutableLiveData<List<FriendUiModel>>(emptyList())
@@ -37,11 +45,33 @@ class FriendsViewModel @Inject constructor(
     val events = SingleLiveEvent<FriendsEvent>()
     private var isPrefetching = false
 
+    init {
+        viewModelScope.launch {
+            combine(
+                friendDao.getAllAccepted(),
+                friendRequestDao.getIncoming(),
+                friendRequestDao.getOutgoing(),
+            ) { accepted, incoming, outgoing ->
+                Triple(accepted, incoming, outgoing)
+            }.collect { (accepted, incoming, outgoing) ->
+                val incomingUi = incoming.map { it.toUiModel(FriendStatus.INCOMING) }
+                val acceptedUi = accepted.map { it.toUiModel(FriendStatus.ACCEPTED) }
+                val outgoingUi = outgoing.map { it.toUiModel(FriendStatus.OUTGOING) }
+                _friends.value = incomingUi + acceptedUi + outgoingUi
+                prefetchAvatars(accepted, incoming, outgoing)
+            }
+        }
+    }
+
     fun refreshFriends() {
         if (_loading.value == true) {
             return
         }
-        loadFriends()
+        _loading.value = true
+        viewModelScope.launch {
+            SyncScheduler.enqueueNow(appContext)
+            _loading.value = false
+        }
     }
 
     fun sendInvite(username: String) {
@@ -51,32 +81,25 @@ class FriendsViewModel @Inject constructor(
         _loading.value = true
         viewModelScope.launch {
             try {
-                friendsRepository.sendFriendRequest(username)
+                friendsRepository.queueSendFriendRequest(username)
                 events.value = FriendsEvent.InviteSent
-                val connections = friendsRepository.getConnections()
-                updateFriends(connections)
-                prefetchAvatars(connections)
             } catch (e: Exception) {
-                events.value = if (e.isAuthError()) {
-                    FriendsEvent.AuthRequired
-                } else {
-                    FriendsEvent.InviteFailed
-                }
+                events.value = FriendsEvent.InviteFailed
             }
             _loading.value = false
         }
     }
 
     fun acceptRequest(id: String?) {
-        handleRequestAction(id) { friendsRepository.acceptRequest(it) }
+        handleRequestAction(id) { friendsRepository.queueAcceptRequest(it) }
     }
 
     fun declineRequest(id: String?) {
-        handleRequestAction(id) { friendsRepository.declineRequest(it) }
+        handleRequestAction(id) { friendsRepository.queueDeclineRequest(it) }
     }
 
     fun cancelRequest(id: String?) {
-        handleRequestAction(id) { friendsRepository.cancelRequest(it) }
+        handleRequestAction(id) { friendsRepository.queueCancelRequest(it) }
     }
 
     private fun handleRequestAction(id: String?, action: suspend (String) -> Unit) {
@@ -91,56 +114,18 @@ class FriendsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 action(id)
-                val connections = friendsRepository.getConnections()
-                updateFriends(connections)
-                prefetchAvatars(connections)
             } catch (e: Exception) {
-                events.value = if (e.isAuthError()) {
-                    FriendsEvent.AuthRequired
-                } else {
-                    FriendsEvent.ActionFailed
-                }
+                events.value = FriendsEvent.ActionFailed
             }
             _loading.value = false
         }
     }
 
-    private fun loadFriends() {
-        _loading.value = true
-        viewModelScope.launch {
-            try {
-                val connections = friendsRepository.getConnections()
-                updateFriends(connections)
-                prefetchAvatars(connections)
-            } catch (e: Exception) {
-                events.value = if (e.isAuthError()) {
-                    FriendsEvent.AuthRequired
-                } else {
-                    FriendsEvent.LoadFailed
-                }
-            } finally {
-                _loading.value = false
-            }
-        }
-    }
-
-    private fun updateFriends(connections: List<FriendConnectionDto>) {
-        val incoming = connections
-            .filter { it.status.isIncoming() }
-            .mapNotNull { it.toUiModel(FriendStatus.INCOMING) }
-        val accepted = connections
-            .filter { it.status.isAccepted() }
-            .mapNotNull { it.toUiModel(FriendStatus.ACCEPTED) }
-        val outgoing = connections
-            .filter { it.status.isOutgoing() }
-            .mapNotNull { it.toUiModel(FriendStatus.OUTGOING) }
-        val unknown = connections
-            .filter { !it.status.isIncoming() && !it.status.isAccepted() && !it.status.isOutgoing() }
-            .mapNotNull { it.toUiModel(FriendStatus.UNKNOWN) }
-        _friends.value = incoming + accepted + outgoing + unknown
-    }
-
-    private fun prefetchAvatars(connections: List<FriendConnectionDto>) {
+    private fun prefetchAvatars(
+        accepted: List<FriendEntity>,
+        incoming: List<FriendRequestEntity>,
+        outgoing: List<FriendRequestEntity>,
+    ) {
         if (isPrefetching) {
             return
         }
@@ -148,18 +133,21 @@ class FriendsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    connections.forEach { connection ->
-                        val user = connection.user
-                        val userId = user.id
-                        val updatedAt = user.avatarUpdatedAt
-                        if (user.avatarPath.isNullOrBlank() || updatedAt.isNullOrBlank()) {
-                            return@forEach
-                        }
+                    val candidates = accepted.map { it.toAvatarCandidate() } +
+                        incoming.map { it.toAvatarCandidate() } +
+                        outgoing.map { it.toAvatarCandidate() }
+                    candidates.forEach { candidate ->
+                        val userId = candidate.userId ?: return@forEach
+                        val updatedAt = candidate.avatarUpdatedAt ?: return@forEach
+                        val avatarPath = candidate.avatarPath ?: return@forEach
                         val cached = friendAvatarStore.getCachedAvatarUri(userId, updatedAt)
                         if (!cached.isNullOrBlank()) {
                             return@forEach
                         }
-                        val url = buildAvatarUrl(user)
+                        if (avatarPath.startsWith("file:") || avatarPath.startsWith("content:")) {
+                            return@forEach
+                        }
+                        val url = resolveAvatarUrl(avatarPath, updatedAt)
                         if (url.isNullOrBlank()) {
                             return@forEach
                         }
@@ -178,59 +166,67 @@ class FriendsViewModel @Inject constructor(
                         }
                     }
                 }
-                updateFriends(connections)
+                val incomingUi = incoming.map { it.toUiModel(FriendStatus.INCOMING) }
+                val acceptedUi = accepted.map { it.toUiModel(FriendStatus.ACCEPTED) }
+                val outgoingUi = outgoing.map { it.toUiModel(FriendStatus.OUTGOING) }
+                _friends.value = incomingUi + acceptedUi + outgoingUi
             } finally {
                 isPrefetching = false
             }
         }
     }
 
-    private fun Exception.isAuthError(): Boolean {
-        return (this as? HttpException)?.code() == 401
-    }
-
-    private fun UserSummaryDto.toUiModel(status: FriendStatus): FriendUiModel? {
-        val displayName = displayName ?: username ?: id
+    private fun FriendEntity.toUiModel(status: FriendStatus): FriendUiModel {
+        val displayName = displayName ?: username ?: userId
         return FriendUiModel(
-            id = id,
+            id = userId,
             displayName = displayName,
             username = username,
             status = status,
-            avatarUrl = resolveAvatarUrl(this)
+            avatarUrl = resolveAvatarUrl(avatarPath, avatarUpdatedAt, userId)
         )
     }
 
-    private fun FriendConnectionDto.toUiModel(status: FriendStatus): FriendUiModel? {
-        val displayName = user.displayName ?: user.username ?: user.id
-        val resolvedId = when (status) {
-            FriendStatus.INCOMING, FriendStatus.OUTGOING -> requestId ?: user.id
-            else -> user.id
+    private fun FriendRequestEntity.toUiModel(status: FriendStatus): FriendUiModel {
+        val displayName = displayName ?: username ?: userId
+        val resolvedId = if (status == FriendStatus.ACCEPTED) {
+            userId
+        } else {
+            requestId
         }
         return FriendUiModel(
             id = resolvedId,
             displayName = displayName,
-            username = user.username,
+            username = username,
             status = status,
-            avatarUrl = resolveAvatarUrl(user)
+            avatarUrl = resolveAvatarUrl(avatarPath, avatarUpdatedAt, userId)
         )
     }
 
-    private fun resolveAvatarUrl(user: UserSummaryDto): String? {
-        val cached = friendAvatarStore.getCachedAvatarUri(user.id, user.avatarUpdatedAt)
+    private fun resolveAvatarUrl(
+        avatarPath: String?,
+        avatarUpdatedAt: String?,
+        userId: String?,
+    ): String? {
+        val cached = friendAvatarStore.getCachedAvatarUri(userId, avatarUpdatedAt)
         if (!cached.isNullOrBlank()) {
             return cached
         }
-        return buildAvatarUrl(user)
+        return resolveAvatarUrl(avatarPath, avatarUpdatedAt)
     }
 
-    private fun buildAvatarUrl(user: UserSummaryDto): String? {
-        if (!user.avatarUrl.isNullOrBlank()) {
-            return user.avatarUrl
+    private fun resolveAvatarUrl(avatarPath: String?, avatarUpdatedAt: String?): String? {
+        if (avatarPath.isNullOrBlank()) {
+            return null
         }
-        val path = user.avatarPath ?: return null
-        val updatedAt = user.avatarUpdatedAt
-        val cacheBuster = updatedAt?.let { toEpochSeconds(it) } ?: System.currentTimeMillis() / 1000
-        return BuildConfig.API_BASE_URL.trimEnd('/') + "/app/avatars/" + path + "?v=" + cacheBuster
+        if (avatarPath.startsWith("http") ||
+            avatarPath.startsWith("file:") ||
+            avatarPath.startsWith("content:")
+        ) {
+            return avatarPath
+        }
+        val cacheBuster = avatarUpdatedAt?.let { toEpochSeconds(it) } ?: System.currentTimeMillis() / 1000
+        return BuildConfig.API_BASE_URL.trimEnd('/') + "/app/avatars/" + avatarPath + "?v=" + cacheBuster
     }
 
     private fun toEpochSeconds(value: String): Long {
@@ -241,11 +237,19 @@ class FriendsViewModel @Inject constructor(
         }
     }
 
-    private fun String?.isIncoming(): Boolean = this?.equals("incoming", ignoreCase = true) == true
+    private fun FriendEntity.toAvatarCandidate(): AvatarCandidate {
+        return AvatarCandidate(userId = userId, avatarPath = avatarPath, avatarUpdatedAt = avatarUpdatedAt)
+    }
 
-    private fun String?.isAccepted(): Boolean = this?.equals("accepted", ignoreCase = true) == true
+    private fun FriendRequestEntity.toAvatarCandidate(): AvatarCandidate {
+        return AvatarCandidate(userId = userId, avatarPath = avatarPath, avatarUpdatedAt = avatarUpdatedAt)
+    }
 
-    private fun String?.isOutgoing(): Boolean = this?.equals("outgoing", ignoreCase = true) == true
+    private data class AvatarCandidate(
+        val userId: String?,
+        val avatarPath: String?,
+        val avatarUpdatedAt: String?,
+    )
 }
 
 enum class FriendsEvent {

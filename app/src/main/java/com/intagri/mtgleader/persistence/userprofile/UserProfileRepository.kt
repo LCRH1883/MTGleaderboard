@@ -18,11 +18,9 @@ import retrofit2.HttpException
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.time.Instant
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import javax.inject.Inject
+import com.intagri.mtgleader.util.TimestampUtils
+import java.time.Instant
 
 class UserProfileRepository @Inject constructor(
     @ApplicationContext private val appContext: Context,
@@ -68,6 +66,47 @@ class UserProfileRepository @Inject constructor(
         }
     }
 
+    suspend fun updateDisplayNameQueued(displayName: String?, updatedAt: String): AuthUser {
+        val normalized = displayName?.trim() ?: ""
+        return try {
+            val user = updateProfileWithFallback(
+                UserProfileUpdateRequest(
+                    displayName = normalized,
+                    updatedAt = updatedAt
+                )
+            )
+            userProfileCache.setUser(user)
+            user
+        } catch (e: HttpException) {
+            if (e.code() != 409) {
+                throw e
+            }
+            val refreshed = authApi.getCurrentUser()
+            userProfileCache.setUser(refreshed)
+            refreshed
+        }
+    }
+
+    suspend fun uploadAvatarQueued(file: File, updatedAt: String): AuthUser {
+        return withContext(Dispatchers.IO) {
+            val avatarBody = file.asRequestBody("image/jpeg".toMediaType())
+            val avatarPart = MultipartBody.Part.createFormData("avatar", file.name, avatarBody)
+            val updatedAtPart = updatedAt.toRequestBody("text/plain".toMediaType())
+            try {
+                val user = uploadAvatarWithFallback(avatarPart, updatedAtPart)
+                userProfileCache.setUser(user)
+                user
+            } catch (e: HttpException) {
+                if (e.code() != 409) {
+                    throw e
+                }
+                val refreshed = authApi.getCurrentUser()
+                userProfileCache.setUser(refreshed)
+                refreshed
+            }
+        }
+    }
+
     private fun openInputStream(
         resolver: android.content.ContentResolver,
         uri: Uri
@@ -91,15 +130,14 @@ class UserProfileRepository @Inject constructor(
 
 
     private fun newUpdatedAtTimestamp(): String {
-        val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
-        val cached = userProfileCache.getUser()?.updatedAt
-        val cachedInstant = cached?.let { parseInstant(it) }
+        val now = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS)
+        val cachedInstant = userProfileCache.getUser()?.updatedAt?.let { parseInstant(it) }
         val resolved = if (cachedInstant != null && cachedInstant.isAfter(now)) {
             cachedInstant.plusMillis(1)
         } else {
             now
         }
-        return TIMESTAMP_FORMATTER.format(resolved)
+        return TimestampUtils.formatInstantRfc3339Millis(resolved)
     }
 
     private fun parseInstant(value: String): Instant? {
@@ -180,8 +218,5 @@ class UserProfileRepository @Inject constructor(
 
     companion object {
         private const val TAG = "UserProfileRepository"
-        private const val TIMESTAMP_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-        private val TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern(TIMESTAMP_FORMAT)
-            .withZone(ZoneOffset.UTC)
     }
 }

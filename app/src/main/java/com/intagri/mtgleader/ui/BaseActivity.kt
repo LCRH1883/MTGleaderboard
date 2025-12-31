@@ -3,6 +3,7 @@ package com.intagri.mtgleader.ui
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.intagri.mtgleader.persistence.Datastore
+import com.intagri.mtgleader.persistence.sync.SyncScheduler
 import com.intagri.mtgleader.ui.setup.theme.ScThemeUtils
 import dagger.hilt.EntryPoint
 import dagger.hilt.EntryPoints
@@ -28,5 +29,10 @@ open class BaseActivity : AppCompatActivity() {
         val theme = ScThemeUtils.resolveTheme(this, savedTheme)
         setTheme(theme.resId)
         super.onCreate(savedInstanceState)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        SyncScheduler.enqueueNow(this)
     }
 }

@@ -1,13 +1,20 @@
 package com.intagri.mtgleader.persistence.friends
 
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface FriendsApi {
     @GET("v1/friends/connections")
     suspend fun getConnections(): List<FriendConnectionDto>
+
+    @GET("v1/friends/connections")
+    suspend fun getConnectionsWithEtag(
+        @Header("If-None-Match") etag: String? = null,
+    ): Response<List<FriendConnectionDto>>
 
     @GET("v1/friends")
     suspend fun getFriends(): FriendsOverviewDto
@@ -16,11 +23,20 @@ interface FriendsApi {
     suspend fun sendFriendRequest(@Body request: FriendRequestCreate)
 
     @POST("v1/friends/requests/{id}/accept")
-    suspend fun acceptRequest(@Path("id") id: String)
+    suspend fun acceptRequest(
+        @Path("id") id: String,
+        @Body request: FriendActionRequest? = null,
+    )
 
     @POST("v1/friends/requests/{id}/decline")
-    suspend fun declineRequest(@Path("id") id: String)
+    suspend fun declineRequest(
+        @Path("id") id: String,
+        @Body request: FriendActionRequest? = null,
+    )
 
     @POST("v1/friends/requests/{id}/cancel")
-    suspend fun cancelRequest(@Path("id") id: String)
+    suspend fun cancelRequest(
+        @Path("id") id: String,
+        @Body request: FriendActionRequest? = null,
+    )
 }

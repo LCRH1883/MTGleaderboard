@@ -124,6 +124,7 @@ class GameViewModel @Inject constructor(
         startGameClock()
     }
 
+
     private fun initializePlayers() {
         playerMap.clear()
         availableCountersMap.clear()

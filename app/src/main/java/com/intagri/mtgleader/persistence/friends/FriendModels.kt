@@ -25,6 +25,8 @@ data class FriendConnectionDto(
     val requestId: String? = null,
     @Json(name = "created_at")
     val createdAt: String? = null,
+    @Json(name = "updated_at")
+    val updatedAt: String? = null,
 )
 
 @JsonClass(generateAdapter = true)
@@ -33,6 +35,8 @@ data class FriendRequestDto(
     val user: UserSummaryDto,
     @Json(name = "created_at")
     val createdAt: String? = null,
+    @Json(name = "updated_at")
+    val updatedAt: String? = null,
 )
 
 @JsonClass(generateAdapter = true)
@@ -47,4 +51,12 @@ data class FriendsOverviewDto(
 @JsonClass(generateAdapter = true)
 data class FriendRequestCreate(
     val username: String,
+    @Json(name = "updated_at")
+    val updatedAt: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class FriendActionRequest(
+    @Json(name = "updated_at")
+    val updatedAt: String? = null,
 )
