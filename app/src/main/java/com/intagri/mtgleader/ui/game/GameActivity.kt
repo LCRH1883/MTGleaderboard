@@ -20,6 +20,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.WindowManager
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -906,7 +907,12 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 button.isSelected = option.userId == currentAssignedId
                 button.setOnClickListener {
                     if (option.userId.isNullOrBlank()) {
-                        viewModel.clearAssignedUser(playerId)
+                        val defaultName = viewModel.getGuestName(playerId)
+                            ?: "Player ${playerId + 1}"
+                        promptGuestName(playerId, defaultName) { name ->
+                            viewModel.clearAssignedUser(playerId)
+                            viewModel.setGuestName(playerId, name)
+                        }
                     } else {
                         viewModel.assignPlayerToUser(
                             playerId = playerId,
@@ -930,6 +936,26 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
                 .create()
             dialog.show()
         }
+    }
+
+    private fun promptGuestName(
+        playerId: Int,
+        defaultName: String,
+        onSave: (String) -> Unit,
+    ) {
+        val input = EditText(this).apply {
+            setText(defaultName)
+            setSelection(text.length)
+            hint = getString(R.string.temporary_player_name_hint)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.temporary_player_name))
+            .setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                onSave(input.text?.toString().orEmpty())
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private suspend fun buildAssignableUsers(): List<AssignableUser> {
