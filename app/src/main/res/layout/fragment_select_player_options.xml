@@ -51,6 +51,41 @@
 
     <TextView
         style="@style/Header3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/edit_counter_horizontal_margin"
+        android:layout_marginTop="@dimen/default_padding"
+        android:text="@string/assign_player" />
+
+    <LinearLayout
+        android:id="@+id/assign_player_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/edit_counter_horizontal_margin"
+        android:layout_marginTop="@dimen/default_padding_half"
+        android:orientation="vertical" />
+
+    <TextView
+        style="@style/Header3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/edit_counter_horizontal_margin"
+        android:layout_marginTop="@dimen/default_padding"
+        android:text="@string/temporary_player_name" />
+
+    <EditText
+        android:id="@+id/temp_name_edit_text"
+        style="@style/NameEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/edit_counter_horizontal_margin"
+        android:layout_marginTop="@dimen/default_padding_half"
+        android:hint="@string/temporary_player_name_hint"
+        android:imeOptions="actionDone"
+        android:maxLines="1" />
+
+    <TextView
+        style="@style/Header3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/default_padding"

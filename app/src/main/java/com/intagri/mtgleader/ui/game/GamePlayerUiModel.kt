@@ -15,6 +15,8 @@ data class GamePlayerUiModel(
     var isStartingPlayer: Boolean = false,
     var isStartingPlayerSelectable: Boolean = false,
     var isCurrentTurnPlayer: Boolean = false,
+    var assignedUserLabel: String? = null,
+    var assignedAvatarUrl: String? = null,
 ) {
     enum class Menu {
         MAIN,

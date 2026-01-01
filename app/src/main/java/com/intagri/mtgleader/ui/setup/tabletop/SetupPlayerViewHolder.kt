@@ -38,6 +38,6 @@ class SetupPlayerViewHolder(
         )
 
         binding.playerBackgroundImage.setBackgroundColor(alphaColor)
-        binding.playerSetupTemplateName.text = data.profile?.name
+        binding.playerSetupTemplateName.text = data.tempName ?: data.profile?.name
     }
 }

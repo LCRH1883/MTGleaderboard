@@ -212,6 +212,13 @@ class SetupViewModel @Inject constructor(
                 id = participant.seatIndex,
                 profile = profile,
                 color = color,
+                assignedUserId = participant.userId,
+                assignedDisplayName = participant.userId?.let { participant.displayName },
+                tempName = if (participant.userId.isNullOrBlank()) {
+                    participant.guestName ?: participant.displayName
+                } else {
+                    null
+                },
             )
         }
         return ResumeGameInfo(

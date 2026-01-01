@@ -50,6 +50,12 @@
     <string name="game_clock_placeholder">00:00</string>
     <string name="pause_game">Pause</string>
     <string name="resume_game">Resume</string>
+    <string name="assign_player">Assign Player</string>
+    <string name="assign_player_self">You</string>
+    <string name="assign_player_empty">No friends available.</string>
+    <string name="assign_player_unassigned">Unassigned</string>
+    <string name="temporary_player_name">Temporary Name</string>
+    <string name="temporary_player_name_hint">Enter a name for this match</string>
     <string name="keep_screen_awake">Keep Screen Awake</string>
     <string name="hide_navigation">Hide Navigation</string>
 

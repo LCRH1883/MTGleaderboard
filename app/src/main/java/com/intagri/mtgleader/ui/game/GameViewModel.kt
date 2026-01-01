@@ -137,6 +137,7 @@ class GameViewModel @Inject constructor(
     private val playerTurnTimeMs: MutableMap<Int, Long> = mutableMapOf()
     private val playerTurnsTaken: MutableMap<Int, Int> = mutableMapOf()
     private val eliminationInfo: MutableMap<Int, EliminationInfo> = mutableMapOf()
+    private val assignedUsers: MutableMap<Int, AssignedUser> = mutableMapOf()
 
     private var localMatchId: String = resumeMatchId ?: UUID.randomUUID().toString()
     private var createdAtEpoch: Long = System.currentTimeMillis()
@@ -174,6 +175,7 @@ class GameViewModel @Inject constructor(
         playerTurnTimeMs.clear()
         playerTurnsTaken.clear()
         eliminationInfo.clear()
+        assignedUsers.clear()
         for (i in setupPlayers.indices) {
 
             val player = GamePlayerUiModel(
@@ -190,6 +192,19 @@ class GameViewModel @Inject constructor(
             availableCountersMap[i] = setupPlayers[i].profile?.counters ?: emptyList()
             playerTurnTimeMs[player.model.id] = 0L
             playerTurnsTaken[player.model.id] = 0
+            setupPlayers[i].assignedUserId?.let { userId ->
+                val displayName = setupPlayers[i].assignedDisplayName
+                    ?: setupPlayers[i].assignedUsername
+                    ?: setupPlayers[i].tempName
+                    ?: setupPlayers[i].profile?.name
+                    ?: "Player ${i + 1}"
+                assignedUsers[i] = AssignedUser(
+                    userId = userId,
+                    displayName = displayName,
+                    username = setupPlayers[i].assignedUsername,
+                    avatarUrl = setupPlayers[i].assignedAvatarUrl,
+                )
+            }
 
             /**
              * Make sure pending map of selection changes is in sync with whatever
@@ -203,10 +218,7 @@ class GameViewModel @Inject constructor(
             playerMap[i]?.counterSelections = generateSelectionUiModelsForPlayer(i)
             playerMap[i]?.rearrangeCounters = generateRearrangeUiModelsForPlayer(i)
         }
-        applyStartingPlayerState()
-        applyCurrentTurnState()
-        _players.value = playerMap.values.toList()
-        _startingPlayerSelected.value = startingPlayerId != null
+        updatePlayerState()
     }
 
     private fun applyStartingPlayerState() {
@@ -224,9 +236,35 @@ class GameViewModel @Inject constructor(
         }
     }
 
+    private fun applyAssignedLabels() {
+        playerMap.forEach { (playerId, player) ->
+            val assignedUser = assignedUsers[playerId]
+            player.assignedUserLabel = formatAssignedLabel(assignedUser)
+            player.assignedAvatarUrl = assignedUser?.avatarUrl
+        }
+    }
+
+    private fun formatAssignedLabel(assignedUser: AssignedUser?): String? {
+        if (assignedUser == null) {
+            return null
+        }
+        val baseName = assignedUser.displayName.ifBlank {
+            assignedUser.username ?: ""
+        }
+        val username = assignedUser.username?.takeIf { it.isNotBlank() }
+        return when {
+            baseName.isNotBlank() && username != null && baseName != username ->
+                "$baseName (@$username)"
+            baseName.isNotBlank() -> baseName
+            username != null -> "@$username"
+            else -> assignedUser.userId
+        }
+    }
+
     private fun updatePlayerState() {
         applyStartingPlayerState()
         applyCurrentTurnState()
+        applyAssignedLabels()
         _players.value = playerMap.values.toList()
         _startingPlayerSelected.value = startingPlayerId != null
     }
@@ -590,6 +628,7 @@ class GameViewModel @Inject constructor(
         _turnCount.value = 1
         currentTurnStartElapsedMs = null
         turnPausedAtMs = null
+        assignedUsers.clear()
         resetGameClock()
         resetTurnTimer()
         initializePlayers()
@@ -638,6 +677,34 @@ class GameViewModel @Inject constructor(
         }
     }
 
+    fun assignPlayerToUser(
+        playerId: Int,
+        userId: String,
+        displayName: String,
+        username: String?,
+        avatarUrl: String?
+    ) {
+        assignedUsers[playerId] = AssignedUser(
+            userId = userId,
+            displayName = displayName,
+            username = username,
+            avatarUrl = avatarUrl,
+        )
+        updatePlayerState()
+        scheduleSave()
+    }
+
+    fun clearAssignedUser(playerId: Int) {
+        if (assignedUsers.remove(playerId) != null) {
+            updatePlayerState()
+            scheduleSave()
+        }
+    }
+
+    fun getAssignedUserId(playerId: Int): String? {
+        return assignedUsers[playerId]?.userId
+    }
+
     private data class TurnHistoryEntry(
         val previousPlayerId: Int,
         val incrementedTurn: Boolean,
@@ -646,6 +713,13 @@ class GameViewModel @Inject constructor(
     private data class EliminationInfo(
         val eliminatedTurnNumber: Int,
         val eliminatedDuringSeatIndex: Int?,
+    )
+
+    private data class AssignedUser(
+        val userId: String,
+        val displayName: String,
+        val username: String?,
+        val avatarUrl: String?,
     )
 
     private fun recordTurnEnd(nowMs: Long) {
@@ -740,7 +814,21 @@ class GameViewModel @Inject constructor(
         )
         val participants = playerMap.entries.mapNotNull { (seatIndex, player) ->
             val setupPlayer = setupPlayers.getOrNull(seatIndex) ?: return@mapNotNull null
-            val displayName = setupPlayer.profile?.name ?: "Player ${seatIndex + 1}"
+            val assignedUser = assignedUsers[seatIndex]
+            val fallbackName = setupPlayer.tempName
+                ?: setupPlayer.profile?.name
+                ?: "Player ${seatIndex + 1}"
+            val displayName = assignedUser?.displayName ?: fallbackName
+            val guestName = if (assignedUser == null && !setupPlayer.tempName.isNullOrBlank()) {
+                setupPlayer.tempName
+            } else {
+                null
+            }
+            val participantType = when {
+                assignedUser != null -> GameParticipantType.ACCOUNT
+                guestName != null -> GameParticipantType.GUEST
+                else -> GameParticipantType.LOCAL_PROFILE
+            }
             val elimination = eliminationInfo[seatIndex]
             val baseTurnTimeMs = playerTurnTimeMs[seatIndex] ?: 0L
             val totalTurnTimeMs = if (seatIndex == currentTurnPlayerId) {
@@ -751,8 +839,10 @@ class GameViewModel @Inject constructor(
             GameParticipantEntity(
                 localMatchId = localMatchId,
                 seatIndex = seatIndex,
-                participantType = GameParticipantType.LOCAL_PROFILE,
+                participantType = participantType,
                 profileName = setupPlayer.profile?.name,
+                userId = assignedUser?.userId,
+                guestName = guestName,
                 displayName = displayName,
                 colorName = setupPlayer.color.name,
                 startingLife = startingLife,
@@ -819,6 +909,14 @@ class GameViewModel @Inject constructor(
                 eliminationInfo[playerId] = EliminationInfo(
                     participant.eliminatedTurnNumber,
                     participant.eliminatedDuringSeatIndex
+                )
+            }
+            if (!participant.userId.isNullOrBlank()) {
+                assignedUsers[playerId] = AssignedUser(
+                    userId = participant.userId,
+                    displayName = participant.displayName,
+                    username = null,
+                    avatarUrl = null,
                 )
             }
         }

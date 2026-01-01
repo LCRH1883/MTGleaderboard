@@ -14,6 +14,7 @@ import android.os.Looper
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -21,19 +22,27 @@ import android.view.ViewTreeObserver
 import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.github.rongi.rotate_layout.layout.RotateLayout
 import com.intagri.mtgleader.R
+import com.intagri.mtgleader.BuildConfig
 import com.intagri.mtgleader.model.TabletopType
 import com.intagri.mtgleader.model.player.PlayerSetupModel
+import com.intagri.mtgleader.persistence.friends.FriendAvatarStore
+import com.intagri.mtgleader.persistence.friends.FriendDao
+import com.intagri.mtgleader.persistence.userprofile.UserProfileLocalStore
 import com.intagri.mtgleader.ui.BaseActivity
 import com.intagri.mtgleader.ui.game.options.GameOptionsDialogFragment
 import com.intagri.mtgleader.ui.game.options.GameTimerDialogFragment
@@ -44,13 +53,16 @@ import com.intagri.mtgleader.view.CircularTouchFrameLayout
 import com.intagri.mtgleader.view.TableLayoutPosition
 import com.intagri.mtgleader.view.TabletopLayout
 import com.intagri.mtgleader.view.counter.edit.PlayerMenuListener
+import com.intagri.mtgleader.util.TimestampUtils
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
-import kotlin.math.abs
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.hypot
 import kotlin.math.roundToInt
+import javax.inject.Inject
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 
 @AndroidEntryPoint
@@ -111,6 +123,15 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
     private var latestTurnTimerEnabled: Boolean = true
     private var latestTurnTimerOvertime: Boolean = false
     private var turnTimerTone: ToneGenerator? = null
+
+    @Inject
+    lateinit var friendDao: FriendDao
+
+    @Inject
+    lateinit var friendAvatarStore: FriendAvatarStore
+
+    @Inject
+    lateinit var userProfileLocalStore: UserProfileLocalStore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -852,6 +873,178 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
     override fun onStartingPlayerSelected(playerId: Int) {
         viewModel.selectStartingPlayer(playerId)
     }
+
+    override fun onAssignPlayerRequested(playerId: Int) {
+        lifecycleScope.launch {
+            val options = buildAssignableUsers()
+            if (options.isEmpty()) {
+                Toast.makeText(
+                    this@GameActivity,
+                    getString(R.string.assign_player_empty),
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@launch
+            }
+            val currentAssignedId = viewModel.getAssignedUserId(playerId)
+            val container = LinearLayout(this@GameActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                val padding = resources.getDimensionPixelSize(R.dimen.default_padding)
+                setPadding(padding, padding, padding, padding)
+            }
+            val inflater = LayoutInflater.from(this@GameActivity)
+            lateinit var dialog: AlertDialog
+            options.forEach { option ->
+                val button = inflater.inflate(
+                    R.layout.item_assign_player_button,
+                    container,
+                    false
+                )
+                val labelView = button.findViewById<TextView>(R.id.assign_player_label)
+                val avatarView = button.findViewById<ImageView>(R.id.assign_player_avatar)
+                labelView.text = formatAssignableUserLabel(option)
+                bindAvatar(avatarView, option.avatarUrl)
+                button.isSelected = option.userId == currentAssignedId
+                button.setOnClickListener {
+                    if (option.userId.isNullOrBlank()) {
+                        viewModel.clearAssignedUser(playerId)
+                    } else {
+                        viewModel.assignPlayerToUser(
+                            playerId = playerId,
+                            userId = option.userId ?: return@setOnClickListener,
+                            displayName = option.displayName,
+                            username = option.username,
+                            avatarUrl = option.avatarUrl,
+                        )
+                    }
+                    dialog.dismiss()
+                }
+                container.addView(button)
+            }
+            val scrollView = ScrollView(this@GameActivity).apply {
+                addView(container)
+            }
+            dialog = AlertDialog.Builder(this@GameActivity)
+                .setTitle(R.string.assign_player)
+                .setView(scrollView)
+                .setNegativeButton(android.R.string.cancel, null)
+                .create()
+            dialog.show()
+        }
+    }
+
+    private suspend fun buildAssignableUsers(): List<AssignableUser> {
+        val options = mutableListOf<AssignableUser>()
+        options.add(AssignableUser(null, "", null, false, null))
+        val selfEntity = userProfileLocalStore.getEntity()
+        if (selfEntity != null) {
+            options.add(
+                AssignableUser(
+                    userId = selfEntity.id,
+                    displayName = selfEntity.displayName
+                        ?: selfEntity.username
+                        ?: getString(R.string.assign_player_self),
+                    username = selfEntity.username,
+                    isSelf = true,
+                    avatarUrl = resolveAvatarUrl(
+                        selfEntity.avatarPath,
+                        selfEntity.avatarUpdatedAt
+                    ),
+                )
+            )
+        }
+        val friends = friendDao.getAllAccepted().first()
+        for (friend in friends) {
+            if (selfEntity?.id != null && friend.userId == selfEntity.id) {
+                continue
+            }
+            options.add(
+                AssignableUser(
+                    userId = friend.userId,
+                    displayName = friend.displayName ?: friend.username ?: friend.userId,
+                    username = friend.username,
+                    isSelf = false,
+                    avatarUrl = resolveFriendAvatarUrl(
+                        friend.userId,
+                        friend.avatarPath,
+                        friend.avatarUpdatedAt
+                    ),
+                )
+            )
+        }
+        return options
+    }
+
+    private fun resolveFriendAvatarUrl(
+        userId: String,
+        avatarPath: String?,
+        avatarUpdatedAt: String?,
+    ): String? {
+        val cached = friendAvatarStore.getCachedAvatarUri(userId, avatarUpdatedAt)
+        if (!cached.isNullOrBlank()) {
+            return cached
+        }
+        return resolveAvatarUrl(avatarPath, avatarUpdatedAt)
+    }
+
+    private fun resolveAvatarUrl(path: String?, updatedAt: String?): String? {
+        if (path.isNullOrBlank()) {
+            return null
+        }
+        if (path.startsWith("http") || path.startsWith("file:") || path.startsWith("content:")) {
+            return path
+        }
+        val epochSeconds = TimestampUtils.parseInstantSafe(updatedAt)?.epochSecond
+            ?: (System.currentTimeMillis() / 1000)
+        return BuildConfig.API_BASE_URL.trimEnd('/') + "/app/avatars/" + path + "?v=" + epochSeconds
+    }
+
+    private fun bindAvatar(avatarView: ImageView, avatarUrl: String?) {
+        if (avatarUrl.isNullOrBlank()) {
+            avatarView.setImageResource(R.drawable.ic_user)
+            avatarView.imageTintList = ContextCompat.getColorStateList(
+                this,
+                R.color.option_button_text_color
+            )
+            return
+        }
+        avatarView.imageTintList = null
+        com.bumptech.glide.Glide.with(avatarView)
+            .load(avatarUrl)
+            .circleCrop()
+            .placeholder(R.drawable.ic_user)
+            .error(R.drawable.ic_user)
+            .into(avatarView)
+    }
+
+    private fun formatAssignableUserLabel(option: AssignableUser): String {
+        if (option.userId.isNullOrBlank()) {
+            return getString(R.string.assign_player_unassigned)
+        }
+        val baseName = option.displayName.ifBlank {
+            option.username ?: getString(R.string.assign_player_self)
+        }
+        val usernameLabel = option.username?.takeIf { it.isNotBlank() }?.let { "@$it" }
+        val suffix = if (usernameLabel != null && usernameLabel != baseName) {
+            " ($usernameLabel)"
+        } else {
+            ""
+        }
+        val selfLabel = getString(R.string.assign_player_self)
+        val prefix = if (option.isSelf && baseName != selfLabel) {
+            selfLabel + " - "
+        } else {
+            ""
+        }
+        return prefix + baseName + suffix
+    }
+
+    private data class AssignableUser(
+        val userId: String?,
+        val displayName: String,
+        val username: String?,
+        val isSelf: Boolean,
+        val avatarUrl: String?,
+    )
 
     override fun onOpenExitPrompt() {
         openExitPrompt()

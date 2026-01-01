@@ -131,7 +131,7 @@
                         style="@style/GameButton"
                         android:layout_width="@dimen/revealed_icon_size"
                         android:layout_height="@dimen/revealed_icon_size"
-                        android:src="@drawable/ic_rearrange_counters" />
+                        android:src="@drawable/ic_user" />
 
                     <TextView
                         android:id="@+id/revealed_rearrange_counters_label"
@@ -140,7 +140,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/revealed_menu_icon_margin"
                         android:gravity="center"
-                        android:text="@string/rearrange_counters" />
+                        android:text="@string/assign_player" />
                 </LinearLayout>
 
                 <com.intagri.mtgleader.view.HoldableButton

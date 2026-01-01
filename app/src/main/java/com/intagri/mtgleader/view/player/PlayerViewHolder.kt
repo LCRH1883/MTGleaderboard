@@ -21,6 +21,7 @@ import com.intagri.mtgleader.view.counter.edit.PlayerMenuListener
 import com.intagri.mtgleader.view.counter.edit.RearrangeCountersRecyclerAdapter
 import com.intagri.mtgleader.view.drag.OnStartDragListener
 import com.intagri.mtgleader.view.drag.SimpleItemTouchHelperCallback
+import com.bumptech.glide.Glide
 
 /**
  * Generic VH pattern for a player that can be used in a RV or TableTopLayout
@@ -90,7 +91,7 @@ class PlayerViewHolder(
         binding.revealedRearrangeCountersButton.setListener(object :
             HoldableButton.HoldableButtonListener {
             override fun onSingleClick() {
-                playerMenuListener.onRearrangeCountersOpened(playerId)
+                playerMenuListener.onAssignPlayerRequested(playerId)
             }
 
             override fun onHoldContinued(increments: Int) {}
@@ -131,6 +132,9 @@ class PlayerViewHolder(
         playerId = data.model.id
         itemView.tag = playerId
         countersAdapter.setData(data.model)
+        val assignLabel = data.assignedUserLabel?.takeIf { it.isNotBlank() }
+            ?: itemView.context.getString(R.string.assign_player)
+        binding.revealedRearrangeCountersLabel.text = assignLabel
 
         val color = ContextCompat.getColor(
             itemView.context,
@@ -170,6 +174,22 @@ class PlayerViewHolder(
             binding.revealedAddCountersIcon.imageTintList = gameButtonColorStateList
             binding.revealedAddCountersLabel.setTextColor(gameButtonColorStateList)
             binding.addCounter.imageTintList = gameButtonColorStateList
+        }
+
+        val baseRearrangeTint = binding.revealedRearrangeCountersIcon.imageTintList
+        val avatarUrl = data.assignedAvatarUrl?.takeIf { it.isNotBlank() }
+        if (avatarUrl != null) {
+            binding.revealedRearrangeCountersIcon.imageTintList = null
+            Glide.with(binding.revealedRearrangeCountersIcon)
+                .load(avatarUrl)
+                .circleCrop()
+                .placeholder(R.drawable.ic_user)
+                .error(R.drawable.ic_user)
+                .into(binding.revealedRearrangeCountersIcon)
+        } else {
+            Glide.with(binding.revealedRearrangeCountersIcon).clear(binding.revealedRearrangeCountersIcon)
+            binding.revealedRearrangeCountersIcon.setImageResource(R.drawable.ic_user)
+            binding.revealedRearrangeCountersIcon.imageTintList = baseRearrangeTint
         }
 
         // Make usability adjustments based on size (only once measured)
@@ -297,9 +317,9 @@ class PlayerViewHolder(
         }
 
         binding.rearrangeCounters.isEnabled = data.rearrangeButtonEnabled
-        binding.revealedRearrangeCountersButton.isEnabled = data.rearrangeButtonEnabled
-        binding.revealedRearrangeCountersLabel.isEnabled = data.rearrangeButtonEnabled
-        binding.revealedRearrangeCountersIcon.isEnabled = data.rearrangeButtonEnabled
+        binding.revealedRearrangeCountersButton.isEnabled = true
+        binding.revealedRearrangeCountersLabel.isEnabled = true
+        binding.revealedRearrangeCountersIcon.isEnabled = true
 
         if (data.isCurrentTurnPlayer) {
             if (isLightTheme) {

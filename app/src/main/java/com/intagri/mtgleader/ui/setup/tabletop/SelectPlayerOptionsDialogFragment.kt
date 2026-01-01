@@ -6,7 +6,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.ImageView
 import android.widget.SpinnerAdapter
+import android.widget.TextView
+import androidx.core.widget.doAfterTextChanged
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
@@ -40,6 +43,7 @@ class SelectPlayerOptionsDialogFragment : DialogFragment() {
     private val viewModel: SelectPlayerOptionsViewModel by viewModels()
 
     private var spinnerAdapter: SpinnerAdapter? = null
+    private val assignButtons = mutableListOf<AssignButton>()
 
     private val spinnerItemListener = object : AdapterView.OnItemSelectedListener {
         override fun onItemSelected(
@@ -94,7 +98,11 @@ class SelectPlayerOptionsDialogFragment : DialogFragment() {
             binding.colorPickerView.setSelectedColor(
                 allColorInts[allColors.indexOf(it.color)]
             )
-            setSpinnerSelection()
+            setProfileSpinnerSelection()
+            updateAssignButtonSelection()
+            if (binding.tempNameEditText.text.toString() != it.tempName.orEmpty()) {
+                binding.tempNameEditText.setText(it.tempName.orEmpty())
+            }
         }
 
         viewModel.profiles.observe(viewLifecycleOwner) { profiles ->
@@ -107,7 +115,11 @@ class SelectPlayerOptionsDialogFragment : DialogFragment() {
                 spinnerOptions
             )
             binding.profileSpinner.adapter = spinnerAdapter
-            setSpinnerSelection()
+            setProfileSpinnerSelection()
+        }
+
+        viewModel.assignableUsers.observe(viewLifecycleOwner) { users ->
+            renderAssignableUsers(users)
         }
 
         binding.saveButton.setOnClickListener {
@@ -118,9 +130,13 @@ class SelectPlayerOptionsDialogFragment : DialogFragment() {
                 dismiss()
             }
         }
+
+        binding.tempNameEditText.doAfterTextChanged { text ->
+            viewModel.updateTempName(text?.toString().orEmpty())
+        }
     }
 
-    private fun setSpinnerSelection() {
+    private fun setProfileSpinnerSelection() {
         binding.profileSpinner.onItemSelectedListener = null
         val index = viewModel.profiles.value?.let { profiles ->
             profiles.indexOfFirst { viewModel.setupModel.value?.profile?.name == it.name }
@@ -131,8 +147,87 @@ class SelectPlayerOptionsDialogFragment : DialogFragment() {
         binding.profileSpinner.onItemSelectedListener = spinnerItemListener
     }
 
+    private fun renderAssignableUsers(users: List<AssignableUser>) {
+        val inflater = LayoutInflater.from(requireContext())
+        assignButtons.clear()
+        binding.assignPlayerList.removeAllViews()
+        users.forEach { user ->
+            val button = inflater.inflate(
+                R.layout.item_assign_player_button,
+                binding.assignPlayerList,
+                false
+            )
+            val label = button.findViewById<TextView>(R.id.assign_player_label)
+            val avatar = button.findViewById<ImageView>(R.id.assign_player_avatar)
+            label.text = formatAssignableUserLabel(user)
+            bindAvatar(avatar, user.avatarUrl)
+            button.setOnClickListener {
+                viewModel.updateAssignedUser(user)
+                updateAssignButtonSelection()
+            }
+            binding.assignPlayerList.addView(button)
+            assignButtons.add(AssignButton(user.userId, button))
+        }
+        updateAssignButtonSelection()
+    }
+
+    private fun updateAssignButtonSelection() {
+        if (assignButtons.isEmpty()) {
+            return
+        }
+        val assignedId = viewModel.setupModel.value?.assignedUserId
+        assignButtons.forEach { assignButton ->
+            assignButton.button.isSelected = assignButton.userId == assignedId
+        }
+        binding.tempNameEditText.isEnabled = assignedId == null
+    }
+
+    private fun formatAssignableUserLabel(user: AssignableUser): String {
+        if (user.userId.isNullOrBlank()) {
+            return getString(R.string.assign_player_unassigned)
+        }
+        val baseName = user.displayName.ifBlank {
+            user.username ?: getString(R.string.assign_player_self)
+        }
+        val usernameLabel = user.username?.takeIf { it.isNotBlank() }?.let { "@$it" }
+        val suffix = if (usernameLabel != null && usernameLabel != baseName) {
+            " ($usernameLabel)"
+        } else {
+            ""
+        }
+        val selfPrefix = if (user.isSelf && baseName != getString(R.string.assign_player_self)) {
+            getString(R.string.assign_player_self) + " - "
+        } else {
+            ""
+        }
+        return selfPrefix + baseName + suffix
+    }
+
+    private fun bindAvatar(avatarView: ImageView, avatarUrl: String?) {
+        if (avatarUrl.isNullOrBlank()) {
+            avatarView.setImageResource(R.drawable.ic_user)
+            avatarView.imageTintList = ContextCompat.getColorStateList(
+                requireContext(),
+                R.color.option_button_text_color
+            )
+            return
+        }
+        avatarView.imageTintList = null
+        com.bumptech.glide.Glide.with(avatarView)
+            .load(avatarUrl)
+            .circleCrop()
+            .placeholder(R.drawable.ic_user)
+            .error(R.drawable.ic_user)
+            .into(avatarView)
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
+
+    private data class AssignButton(
+        val userId: String?,
+        val button: View,
+    )
 }
