@@ -11,8 +11,8 @@ android {
         applicationId "com.intagri.mtgleader"
         minSdkVersion 23
         targetSdkVersion 35
-        versionCode 3000
-        versionName "v00.03.000"
+        versionCode 3001
+        versionName "v00.03.001"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "API_BASE_URL", "\"https://mtgleader.xyz/\""
     }
