@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.intagri.mtgleader.persistence.auth.AuthRepository
 import com.intagri.mtgleader.persistence.auth.AuthUser
+import com.intagri.mtgleader.persistence.notifications.NotificationsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
@@ -13,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthEntryViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val notificationsRepository: NotificationsRepository,
 ) : ViewModel() {
 
     private val errorCodeRegex = Regex("\"code\"\\s*:\\s*\"([^\"]+)\"")
@@ -29,6 +31,7 @@ class AuthEntryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val user = authRepository.login(email, password)
+                notificationsRepository.syncTokenIfNeeded()
                 _state.value = AuthEntryState(user = user)
             } catch (e: Exception) {
                 _state.value = AuthEntryState(
@@ -48,6 +51,7 @@ class AuthEntryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val user = authRepository.register(email, username, password)
+                notificationsRepository.syncTokenIfNeeded()
                 _state.value = AuthEntryState(user = user)
             } catch (e: Exception) {
                 _state.value = AuthEntryState(

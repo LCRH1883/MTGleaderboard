@@ -60,6 +60,28 @@
         android:background="?attr/scDividerColor" />
 
     <FrameLayout
+        android:id="@+id/notifications"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:foreground="?attr/selectableItemBackground"
+        android:padding="@dimen/default_padding">
+
+        <TextView
+            style="@style/NavMenuText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notifications"
+            app:drawableStartCompat="@drawable/ic_notifications"
+            app:drawableEndCompat="@drawable/ic_chevron_right" />
+
+    </FrameLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/nav_menu_divider_width"
+        android:background="?attr/scDividerColor" />
+
+    <FrameLayout
         android:id="@+id/manage_profiles"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

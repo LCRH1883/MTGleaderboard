@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import com.intagri.mtgleader.BuildConfig
 import com.intagri.mtgleader.R
 import com.intagri.mtgleader.ui.settings.friends.FriendsFragment
+import com.intagri.mtgleader.ui.settings.notifications.NotificationsFragment
 import com.intagri.mtgleader.ui.settings.counters.manage.ManageCountersFragment
 import com.intagri.mtgleader.ui.settings.profiles.manage.ManageProfilesFragment
 import com.intagri.mtgleader.ui.settings.user.UserSettingsFragment
@@ -42,6 +43,7 @@ class SettingsFragment: Fragment() {
         }
         val userSettings: View = view.findViewById(R.id.user_settings)
         val friends: View = view.findViewById(R.id.friends)
+        val notifications: View = view.findViewById(R.id.notifications)
         val manageProfiles: View = view.findViewById(R.id.manage_profiles)
         val manageCounters: View = view.findViewById(R.id.manage_counters)
         val themes: View = view.findViewById(R.id.themes)
@@ -60,6 +62,13 @@ class SettingsFragment: Fragment() {
             requireActivity().supportFragmentManager.beginTransaction()
                 .replace(R.id.container, f)
                 .addToBackStack(FriendsFragment.TAG)
+                .commit()
+        }
+        notifications.setOnClickListener {
+            val f = NotificationsFragment.newInstance()
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.container, f)
+                .addToBackStack(NotificationsFragment.TAG)
                 .commit()
         }
         manageProfiles.setOnClickListener {

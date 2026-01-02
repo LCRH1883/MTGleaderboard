@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "827532992386",
+    "project_id": "mtg-leader",
+    "storage_bucket": "mtg-leader.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:827532992386:android:a9726aef368f917908399b",
+        "android_client_info": {
+          "package_name": "com.intagri.mtgleader"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDfGCUivy6-OddSeUBAT5mn75DZ0g21i8c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:827532992386:android:27759c2c6d86c07708399b",
+        "android_client_info": {
+          "package_name": "com.intagri.mtgleader.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDfGCUivy6-OddSeUBAT5mn75DZ0g21i8c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

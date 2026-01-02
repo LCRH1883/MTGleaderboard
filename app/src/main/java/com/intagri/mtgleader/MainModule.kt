@@ -20,6 +20,8 @@ import com.intagri.mtgleader.persistence.images.ImageRepositoryImpl
 import com.intagri.mtgleader.persistence.matches.MatchApi
 import com.intagri.mtgleader.persistence.matches.MatchDao
 import com.intagri.mtgleader.persistence.matches.MatchRepository
+import com.intagri.mtgleader.persistence.notifications.NotificationsApi
+import com.intagri.mtgleader.persistence.notifications.NotificationsRepository
 import com.intagri.mtgleader.persistence.sync.SyncMetadataDao
 import com.intagri.mtgleader.persistence.sync.SyncQueueDao
 import com.intagri.mtgleader.persistence.stats.StatsApi
@@ -217,6 +219,17 @@ object MainModule {
 
     @Provides
     @Singleton
+    fun providesNotificationsApi(okHttpClient: OkHttpClient, moshi: Moshi): NotificationsApi {
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.API_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(NotificationsApi::class.java)
+    }
+
+    @Provides
+    @Singleton
     fun providesFriendsRepository(
         friendsApi: FriendsApi,
         appDatabase: AppDatabase,
@@ -236,6 +249,20 @@ object MainModule {
             syncMetadataDao,
             moshi,
             appContext,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun providesNotificationsRepository(
+        notificationsApi: NotificationsApi,
+        userProfileLocalStore: UserProfileLocalStore,
+        datastore: Datastore,
+    ): NotificationsRepository {
+        return NotificationsRepository(
+            notificationsApi,
+            userProfileLocalStore,
+            datastore,
         )
     }
 

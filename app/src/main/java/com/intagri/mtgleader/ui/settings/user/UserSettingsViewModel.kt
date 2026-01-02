@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.intagri.mtgleader.persistence.auth.AuthRepository
 import com.intagri.mtgleader.persistence.auth.AuthUser
+import com.intagri.mtgleader.persistence.notifications.NotificationsRepository
 import com.intagri.mtgleader.persistence.userprofile.UserProfileRepository
 import com.intagri.mtgleader.persistence.userprofile.UserProfileLocalStore
 import com.intagri.mtgleader.persistence.sync.AvatarUploadPayload
@@ -30,6 +31,7 @@ class UserSettingsViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val userProfileRepository: UserProfileRepository,
     private val userProfileLocalStore: UserProfileLocalStore,
+    private val notificationsRepository: NotificationsRepository,
     private val syncQueueDao: SyncQueueDao,
     moshi: Moshi,
 ) : ViewModel() {
@@ -107,6 +109,7 @@ class UserSettingsViewModel @Inject constructor(
         _state.value = UserSettingsState(isLoading = true, user = existingUser)
         viewModelScope.launch {
             try {
+                notificationsRepository.deleteRegisteredToken()
                 authRepository.logout()
                 _state.value = UserSettingsState(user = null)
             } catch (e: Exception) {

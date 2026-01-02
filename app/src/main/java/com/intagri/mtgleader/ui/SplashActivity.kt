@@ -19,8 +19,11 @@ class SplashActivity : BaseActivity() {
     @Inject
     lateinit var profilesRepository: ProfileRepository
 
+    private var openFriends = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        openFriends = intent?.getBooleanExtra(MainActivity.EXTRA_OPEN_FRIENDS, false) == true
         if (migrationHelper.needsMigration) {
             lifecycleScope.launch {
                 migrationHelper.performMigration()
@@ -37,7 +40,9 @@ class SplashActivity : BaseActivity() {
         lifecycleScope.launch {
             profilesRepository.preloadCache()
                 .onCompletion {
-                    startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+                    val intent = Intent(this@SplashActivity, MainActivity::class.java)
+                        .putExtra(MainActivity.EXTRA_OPEN_FRIENDS, openFriends)
+                    startActivity(intent)
                     finish()
                 }
                 .collect { }

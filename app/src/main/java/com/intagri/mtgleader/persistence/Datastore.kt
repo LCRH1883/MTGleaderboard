@@ -33,6 +33,9 @@ interface Datastore {
     var hideNavigation: Boolean
     var tabletopType: TabletopType
     var theme: SpellCounterTheme
+    var friendRequestNotificationsEnabled: Boolean
+    var registeredFcmToken: String?
+    var registeredFcmTokenUserId: String?
     val version: Int
 
     //Mark as having completed migration + setup for current app version
