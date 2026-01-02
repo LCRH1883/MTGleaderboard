@@ -51,8 +51,6 @@ data class FriendsOverviewDto(
 @JsonClass(generateAdapter = true)
 data class FriendRequestCreate(
     val username: String,
-    @Json(name = "updated_at")
-    val updatedAt: String? = null,
 )
 
 @JsonClass(generateAdapter = true)

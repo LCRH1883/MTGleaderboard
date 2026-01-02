@@ -76,8 +76,8 @@ class FriendsRepository(
         throw HttpException(response)
     }
 
-    suspend fun sendFriendRequest(username: String, updatedAt: String? = null) {
-        friendsApi.sendFriendRequest(FriendRequestCreate(username = username, updatedAt = updatedAt))
+    suspend fun sendFriendRequest(username: String) {
+        friendsApi.sendFriendRequest(FriendRequestCreate(username = username))
     }
 
     suspend fun acceptRequest(id: String, request: FriendActionRequest? = null) {
@@ -181,9 +181,23 @@ class FriendsRepository(
         val outgoing = connections
             .filter { it.status.isOutgoing() }
             .map { it.toFriendRequestEntity(STATUS_OUTGOING, fetchedAt) }
+        val pendingOutgoing = friendRequestDao.getPendingSync()
+            .filter { it.status == STATUS_OUTGOING }
+        val outgoingUsernames = outgoing
+            .mapNotNull { it.username?.lowercase() }
+            .toSet()
+        val pendingToKeep = pendingOutgoing.filter { pending ->
+            val pendingUsername = pending.username?.lowercase()
+            pendingUsername != null && !outgoingUsernames.contains(pendingUsername)
+        }
+        val mergedOutgoing = if (pendingToKeep.isEmpty()) {
+            outgoing
+        } else {
+            outgoing + pendingToKeep
+        }
         appDatabase.withTransaction {
             friendDao.replaceAllAccepted(accepted)
-            friendRequestDao.replaceAllRequests(incoming, outgoing)
+            friendRequestDao.replaceAllRequests(incoming, mergedOutgoing)
         }
     }
 

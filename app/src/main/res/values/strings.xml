@@ -143,6 +143,8 @@
     <string name="friend_action_missing_id">This request can\'t be updated yet.</string>
     <string name="friend_load_failed">Couldn\'t load friends. Try again later.</string>
     <string name="friend_auth_required">Log in to manage friends.</string>
+    <string name="friend_profile_title">Friend Profile</string>
+    <string name="friend_profile_status_label">Status</string>
 
     <!-- Themes -->
     <string name="theme_label">Theme</string>

@@ -179,7 +179,7 @@ class FullSyncWorker(
             SyncAction.SEND_REQUEST -> {
                 val username = payload.username ?: return ProcessOutcome.Delete
                 try {
-                    friendsRepository.sendFriendRequest(username, payload.updatedAt)
+                    friendsRepository.sendFriendRequest(username)
                     friendsRepository.refreshConnections()
                     ProcessOutcome.Delete
                 } catch (e: HttpException) {

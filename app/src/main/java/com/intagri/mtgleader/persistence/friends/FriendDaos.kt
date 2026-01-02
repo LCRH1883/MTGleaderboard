@@ -38,6 +38,9 @@ interface FriendRequestDao {
     @Query("SELECT * FROM friend_requests WHERE status = 'outgoing'")
     fun getOutgoing(): Flow<List<FriendRequestEntity>>
 
+    @Query("SELECT * FROM friend_requests WHERE isPendingSync = 1")
+    suspend fun getPendingSync(): List<FriendRequestEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(items: List<FriendRequestEntity>)
 

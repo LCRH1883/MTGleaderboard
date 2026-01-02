@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -70,6 +71,19 @@ class FriendsViewModel @Inject constructor(
         _loading.value = true
         viewModelScope.launch {
             SyncScheduler.enqueueNow(appContext)
+            try {
+                withContext(Dispatchers.IO) {
+                    friendsRepository.refreshConnections()
+                }
+            } catch (e: HttpException) {
+                if (e.code() == 401) {
+                    events.value = FriendsEvent.AuthRequired
+                } else {
+                    events.value = FriendsEvent.LoadFailed
+                }
+            } catch (_: Exception) {
+                events.value = FriendsEvent.LoadFailed
+            }
             _loading.value = false
         }
     }

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationIcon="@drawable/ic_back"
+        app:title="@string/friend_profile_title" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/default_padding">
+
+            <ImageView
+                android:id="@+id/profile_avatar"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_gravity="center_horizontal"
+                android:background="@drawable/friend_avatar_background"
+                android:clipToOutline="true"
+                android:contentDescription="@string/profile_avatar"
+                android:padding="2dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_skull" />
+
+            <TextView
+                android:id="@+id/profile_name"
+                style="@style/Header2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/default_padding"
+                android:gravity="center_horizontal"
+                android:text="@string/friend_profile_title" />
+
+            <TextView
+                android:id="@+id/profile_username"
+                style="@style/Label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/default_padding_quarter"
+                android:gravity="center_horizontal"
+                android:textColor="@color/darker_grey"
+                android:text="@string/friend_username_hint" />
+
+            <TextView
+                style="@style/Header3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/default_padding"
+                android:text="@string/friend_profile_status_label" />
+
+            <TextView
+                android:id="@+id/profile_status"
+                style="@style/Label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/default_padding_quarter"
+                android:text="@string/friend_status_unknown" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

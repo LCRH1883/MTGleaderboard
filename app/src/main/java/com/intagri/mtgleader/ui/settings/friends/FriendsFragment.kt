@@ -141,6 +141,14 @@ class FriendsFragment : Fragment(), FriendActionListener {
         }
     }
 
+    override fun onProfileClicked(item: FriendUiModel) {
+        val f = FriendProfileFragment.newInstance(item)
+        requireActivity().supportFragmentManager.beginTransaction()
+            .replace(R.id.container, f)
+            .addToBackStack(FriendProfileFragment.TAG)
+            .commit()
+    }
+
     private fun showMessage(message: String, isError: Boolean) {
         messageText.text = message
         if (isError) {

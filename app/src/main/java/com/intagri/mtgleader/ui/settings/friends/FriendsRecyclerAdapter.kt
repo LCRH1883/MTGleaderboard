@@ -50,6 +50,7 @@ class FriendsRecyclerAdapter(
             } else {
                 usernameText.visibility = View.GONE
             }
+            itemView.setOnClickListener { listener.onProfileClicked(item) }
             val avatarUrl = item.avatarUrl
             if (avatarUrl.isNullOrBlank()) {
                 avatarImage.setImageResource(R.drawable.ic_skull)
@@ -108,4 +109,5 @@ class FriendsRecyclerAdapter(
 interface FriendActionListener {
     fun onPrimaryAction(item: FriendUiModel)
     fun onSecondaryAction(item: FriendUiModel)
+    fun onProfileClicked(item: FriendUiModel)
 }
