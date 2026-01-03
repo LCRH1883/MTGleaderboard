@@ -7,6 +7,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.intagri.mtgleader.TestApplication
 import com.intagri.mtgleader.persistence.AppDatabase
+import com.intagri.mtgleader.persistence.Datastore
+import com.intagri.mtgleader.persistence.DatastoreImpl
+import com.intagri.mtgleader.persistence.gamesession.GameSessionRepository
 import com.intagri.mtgleader.persistence.sync.MatchQueuePayload
 import com.intagri.mtgleader.persistence.userprofile.UserProfileLocalStore
 import com.squareup.moshi.Moshi
@@ -37,13 +40,15 @@ class MatchRepositoryTest {
             matchDao = db.matchDao(),
             syncQueueDao = db.syncQueueDao(),
             userProfileLocalStore = UserProfileLocalStore(db.userProfileDao(), moshi),
+            gameSessionRepository = GameSessionRepository(db.gameSessionDao(), moshi),
+            datastore = createDatastore(context),
             moshi = moshi,
             appContext = context,
         )
         val payload = MatchPayloadDto(
             players = listOf(
-                MatchPlayerDto(seat = 1, profileName = "Deck A", life = 10),
-                MatchPlayerDto(seat = 2, profileName = "Deck B", life = 5),
+                MatchPlayerDto(seatIndex = 1, seat = 1, profileName = "Deck A", life = 10),
+                MatchPlayerDto(seatIndex = 2, seat = 2, profileName = "Deck B", life = 5),
             ),
             winnerSeat = 1,
             durationSeconds = 120,
@@ -71,7 +76,7 @@ class MatchRepositoryTest {
         val moshi = Moshi.Builder().build()
         val matchDao = db.matchDao()
         val payload = MatchPayloadDto(
-            players = listOf(MatchPlayerDto(seat = 1, profileName = "Deck A", life = 10)),
+            players = listOf(MatchPlayerDto(seatIndex = 1, seat = 1, profileName = "Deck A", life = 10)),
         )
         val queuePayload = MatchQueuePayload(
             localId = "local-1",
@@ -105,6 +110,8 @@ class MatchRepositoryTest {
             matchDao = matchDao,
             syncQueueDao = db.syncQueueDao(),
             userProfileLocalStore = UserProfileLocalStore(db.userProfileDao(), moshi),
+            gameSessionRepository = GameSessionRepository(db.gameSessionDao(), moshi),
+            datastore = createDatastore(context),
             moshi = moshi,
             appContext = context,
         )
@@ -122,6 +129,10 @@ class MatchRepositoryTest {
         return Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
+    }
+
+    private fun createDatastore(context: Context): Datastore {
+        return DatastoreImpl(context)
     }
 
     private class FakeMatchApi(

@@ -50,6 +50,7 @@ import com.intagri.mtgleader.ui.game.options.GameTimerDialogFragment
 import com.intagri.mtgleader.ui.game.rv.GamePlayerRecyclerAdapter
 import com.intagri.mtgleader.ui.game.tabletop.GameTabletopLayoutAdapter
 import com.intagri.mtgleader.ui.setup.theme.ScThemeUtils
+import com.intagri.mtgleader.ui.matchdetails.MatchDetailsActivity
 import com.intagri.mtgleader.view.CircularTouchFrameLayout
 import com.intagri.mtgleader.view.TableLayoutPosition
 import com.intagri.mtgleader.view.TabletopLayout
@@ -220,6 +221,18 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         }
         viewModel.turnTimerExpiredEvent.observe(this) {
             finish()
+        }
+        viewModel.matchCompletedEvent.observe(this) { matchId ->
+            if (!matchId.isNullOrBlank()) {
+                startActivity(MatchDetailsActivity.startIntent(this, matchId))
+                finish()
+            }
+        }
+        viewModel.confirmEliminationEvent.observe(this) { pending ->
+            if (pending == null) {
+                return@observe
+            }
+            openEliminationConfirmDialog(pending)
         }
 
         viewModel.keepScreenOn.observe(this) {
@@ -810,6 +823,34 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
         dialog.show()
     }
 
+    private fun openCompletePrompt() {
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(R.string.complete_match)
+            .setMessage(R.string.complete_match_confirm)
+            .setPositiveButton(R.string.yes) { _, _ ->
+                closeGameOptionsDialog()
+                viewModel.completeMatch()
+            }
+            .setNegativeButton(R.string.no) { dialog, _ -> dialog.dismiss() }
+
+        dialog.show()
+    }
+
+    private fun openEliminationConfirmDialog(pending: GameViewModel.PendingElimination) {
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(R.string.confirm_elimination_title)
+            .setMessage(getString(R.string.confirm_elimination_message, pending.playerName))
+            .setPositiveButton(R.string.yes) { _, _ ->
+                viewModel.confirmElimination(pending.playerId)
+            }
+            .setNegativeButton(R.string.no) { dialog, _ ->
+                viewModel.cancelElimination(pending.playerId)
+                dialog.dismiss()
+            }
+
+        dialog.show()
+    }
+
     private fun closeGameOptionsDialog() {
         supportFragmentManager.findFragmentByTag(TAG_GAME_OPTIONS)?.let {
             if (it is DialogFragment) {
@@ -1078,6 +1119,10 @@ class GameActivity : BaseActivity(), OnPlayerUpdatedListener,
 
     override fun onOpenResetPrompt() {
         openResetPrompt()
+    }
+
+    override fun onOpenCompletePrompt() {
+        openCompletePrompt()
     }
 
     private fun setupToolbarTurnTimer(toolbar: Toolbar) {

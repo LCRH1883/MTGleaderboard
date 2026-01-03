@@ -7,13 +7,17 @@ import androidx.lifecycle.viewModelScope
 import com.intagri.mtgleader.persistence.auth.AuthRepository
 import com.intagri.mtgleader.persistence.auth.AuthUser
 import com.intagri.mtgleader.persistence.notifications.NotificationsRepository
+import com.intagri.mtgleader.persistence.sync.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import android.content.Context
 import javax.inject.Inject
 
 @HiltViewModel
 class AuthEntryViewModel @Inject constructor(
+    @ApplicationContext private val appContext: Context,
     private val authRepository: AuthRepository,
     private val notificationsRepository: NotificationsRepository,
 ) : ViewModel() {
@@ -32,6 +36,7 @@ class AuthEntryViewModel @Inject constructor(
             try {
                 val user = authRepository.login(email, password)
                 notificationsRepository.syncTokenIfNeeded()
+                SyncScheduler.enqueueNow(appContext)
                 _state.value = AuthEntryState(user = user)
             } catch (e: Exception) {
                 _state.value = AuthEntryState(
@@ -52,6 +57,7 @@ class AuthEntryViewModel @Inject constructor(
             try {
                 val user = authRepository.register(email, username, password)
                 notificationsRepository.syncTokenIfNeeded()
+                SyncScheduler.enqueueNow(appContext)
                 _state.value = AuthEntryState(user = user)
             } catch (e: Exception) {
                 _state.value = AuthEntryState(

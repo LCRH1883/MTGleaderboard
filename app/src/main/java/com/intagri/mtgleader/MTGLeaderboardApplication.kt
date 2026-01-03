@@ -13,6 +13,7 @@ class MTGLeaderboardApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        SyncScheduler.enqueueNow(this)
         SyncScheduler.enqueuePeriodic(this)
     }
 

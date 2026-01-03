@@ -22,6 +22,7 @@ class DatastoreImpl(context: Context) : Datastore {
         private const val KEY_FRIEND_REQUEST_NOTIFICATIONS = "key_friend_request_notifications"
         private const val KEY_FCM_REGISTERED_TOKEN = "key_fcm_registered_token"
         private const val KEY_FCM_REGISTERED_USER_ID = "key_fcm_registered_user_id"
+        private const val KEY_UPLOAD_MATCHES_WIFI_ONLY = "key_upload_matches_wifi_only"
 
         private const val KEY_DATASTORE_VERSION = "key_datastore_version"
     }
@@ -62,6 +63,9 @@ class DatastoreImpl(context: Context) : Datastore {
     override var registeredFcmTokenUserId: String?
         get() = prefs.getString(KEY_FCM_REGISTERED_USER_ID, null)
         set(value) = getEditor().putString(KEY_FCM_REGISTERED_USER_ID, value).apply()
+    override var uploadMatchesWifiOnly: Boolean
+        get() = prefs.getBoolean(KEY_UPLOAD_MATCHES_WIFI_ONLY, false)
+        set(value) = getEditor().putBoolean(KEY_UPLOAD_MATCHES_WIFI_ONLY, value).apply()
 
     override val version: Int
         get() = prefs.getInt(KEY_DATASTORE_VERSION, 0)

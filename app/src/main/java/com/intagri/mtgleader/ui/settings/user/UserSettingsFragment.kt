@@ -14,6 +14,7 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.EditText
 import android.widget.ImageView
+import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -97,6 +98,7 @@ class UserSettingsFragment : Fragment() {
         val saveProfileButton = view.findViewById<Button>(R.id.save_profile_button)
         val usernameValue = view.findViewById<TextView>(R.id.username_value)
         val emailValue = view.findViewById<TextView>(R.id.email_value)
+        val uploadWifiOnlySwitch = view.findViewById<SwitchCompat>(R.id.upload_wifi_only_switch)
         messageText = view.findViewById(R.id.message_text)
         val errorText = view.findViewById<TextView>(R.id.error_text)
         val loginButton = view.findViewById<Button>(R.id.login_button)
@@ -125,6 +127,10 @@ class UserSettingsFragment : Fragment() {
 
         saveProfileButton.setOnClickListener {
             viewModel.updateDisplayName(displayNameInput.text?.toString())
+        }
+
+        uploadWifiOnlySwitch.setOnCheckedChangeListener { _, isChecked ->
+            viewModel.setUploadWifiOnly(isChecked)
         }
 
         viewModel.state.observe(viewLifecycleOwner) { state ->
@@ -167,6 +173,12 @@ class UserSettingsFragment : Fragment() {
                 errorText.visibility = View.VISIBLE
             } else {
                 errorText.visibility = View.GONE
+            }
+        }
+
+        viewModel.uploadWifiOnly.observe(viewLifecycleOwner) { enabled ->
+            if (uploadWifiOnlySwitch.isChecked != enabled) {
+                uploadWifiOnlySwitch.isChecked = enabled == true
             }
         }
 

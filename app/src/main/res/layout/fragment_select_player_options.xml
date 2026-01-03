@@ -66,6 +66,17 @@
         android:orientation="vertical" />
 
     <TextView
+        android:id="@+id/assign_player_offline_hint"
+        style="@style/Label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/edit_counter_horizontal_margin"
+        android:layout_marginTop="@dimen/default_padding_half"
+        android:text="@string/assign_player_offline_empty"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+    <TextView
         style="@style/Header3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

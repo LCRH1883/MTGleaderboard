@@ -11,4 +11,9 @@
         android:icon="@drawable/ic_settings"
         android:title="@string/settings"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/menu_stats"
+        android:icon="@drawable/ic_crown"
+        android:title="@string/stats"
+        app:showAsAction="ifRoom" />
 </menu>

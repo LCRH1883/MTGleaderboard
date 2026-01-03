@@ -27,6 +27,7 @@ import com.intagri.mtgleader.ui.settings.SettingsFragment
 import com.intagri.mtgleader.ui.settings.friends.FriendsFragment
 import com.intagri.mtgleader.ui.settings.friends.FriendsViewModel
 import com.intagri.mtgleader.ui.settings.user.UserSettingsFragment
+import com.intagri.mtgleader.ui.stats.StatsFragment
 import com.intagri.mtgleader.ui.setup.tabletop.SetupTabletopFragment
 import com.intagri.mtgleader.ui.setup.theme.ScThemeUtils
 import com.intagri.mtgleader.view.TabletopLayout
@@ -119,6 +120,14 @@ class SetupFragment : Fragment(), CompoundButton.OnCheckedChangeListener {
                     requireActivity().supportFragmentManager.beginTransaction()
                         .replace(R.id.container, f)
                         .addToBackStack(SettingsFragment.TAG)
+                        .commit()
+                    true
+                }
+                R.id.menu_stats -> {
+                    val f = StatsFragment.newInstance()
+                    requireActivity().supportFragmentManager.beginTransaction()
+                        .replace(R.id.container, f)
+                        .addToBackStack(StatsFragment.TAG)
                         .commit()
                     true
                 }

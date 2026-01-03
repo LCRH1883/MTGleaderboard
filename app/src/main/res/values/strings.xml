@@ -29,6 +29,10 @@
     <string name="are_you_sure_exit">Are you sure you want to exit the game?</string>
     <string name="reset_game">Reset Game</string>
     <string name="are_you_sure_reset">Are you sure you want to reset the game?</string>
+    <string name="complete_match">Complete Match</string>
+    <string name="complete_match_confirm">End the match and save stats?</string>
+    <string name="confirm_elimination_title">Confirm Elimination</string>
+    <string name="confirm_elimination_message">Mark %1$s as eliminated?</string>
     <string name="select_player">Select Player</string>
     <string name="random_player">Random Player</string>
     <string name="dice_menu">Dice</string>
@@ -54,6 +58,7 @@
     <string name="assign_player_self">You</string>
     <string name="assign_player_empty">No friends available.</string>
     <string name="assign_player_unassigned">Unassigned</string>
+    <string name="assign_player_offline_empty">No cached friends available offline.</string>
     <string name="temporary_player_name">Temporary Name</string>
     <string name="temporary_player_name_hint">Enter a name for this match</string>
     <string name="keep_screen_awake">Keep Screen Awake</string>
@@ -61,6 +66,9 @@
 
     <!-- Settings -->
     <string name="settings">Settings</string>
+    <string name="stats">Stats</string>
+    <string name="match_history">Match History</string>
+    <string name="match_history_empty">No completed matches yet.</string>
     <string name="user_settings">Profile</string>
     <string name="friends">Friends</string>
     <string name="notifications">Notifications</string>
@@ -72,6 +80,26 @@
     <string name="about_app">About App</string>
     <string name="version_label">Version %1$s</string>
     <string name="about_description">MTG Leader Board is a Magic: The Gathering life counter for tabletop games.</string>
+
+    <!-- Stats -->
+    <string name="games_played">Games Played</string>
+    <string name="wins">Wins</string>
+    <string name="losses">Losses</string>
+    <string name="win_percent">Win %</string>
+    <string name="head_to_head_friends">Head-to-Head (Friends)</string>
+    <string name="head_to_head_guests">Head-to-Head (Guests)</string>
+    <string name="head_to_head_empty">No head-to-head stats yet.</string>
+    <string name="stats_subtitle_server_pending">Server totals + pending local</string>
+    <string name="stats_subtitle_includes_local">Includes local totals</string>
+    <string name="match_history_title_format">%1$s · %2$s</string>
+    <string name="winner_label">Winner: %1$s</string>
+    <string name="winner_label_short">Winner</string>
+    <string name="winner_unknown">Winner unknown</string>
+    <string name="duration_label">Duration %1$s</string>
+    <string name="sync_pending">Pending upload</string>
+    <string name="sync_synced">Synced</string>
+    <string name="match_details">Match Details</string>
+    <string name="placements">Placements</string>
 
     <!-- Auth -->
     <string name="login">Log In</string>
@@ -112,6 +140,9 @@
     <string name="display_name_hint">Enter a display name</string>
     <string name="profile_details">Profile Details</string>
     <string name="account_details">Account Details</string>
+    <string name="sync_settings">Sync</string>
+    <string name="upload_wifi_only_title">Upload matches on Wi-Fi only</string>
+    <string name="upload_wifi_only_subtitle">Save mobile data by syncing completed matches on Wi-Fi.</string>
     <string name="save_profile">Save Profile</string>
     <string name="change_avatar">Change Avatar</string>
     <string name="profile_avatar">Profile avatar</string>

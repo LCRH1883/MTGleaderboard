@@ -18,6 +18,7 @@ import com.intagri.mtgleader.R
 import com.intagri.mtgleader.databinding.FragmentSelectPlayerOptionsBinding
 import com.intagri.mtgleader.model.player.PlayerColor
 import com.intagri.mtgleader.model.player.PlayerSetupModel
+import com.intagri.mtgleader.util.NetworkUtils
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -169,6 +170,10 @@ class SelectPlayerOptionsDialogFragment : DialogFragment() {
             assignButtons.add(AssignButton(user.userId, button))
         }
         updateAssignButtonSelection()
+        val hasCachedFriends = users.any { !it.userId.isNullOrBlank() && !it.isSelf }
+        val showOfflineHint = !hasCachedFriends && !NetworkUtils.isOnline(requireContext())
+        binding.assignPlayerOfflineHint.visibility =
+            if (showOfflineHint) View.VISIBLE else View.GONE
     }
 
     private fun updateAssignButtonSelection() {

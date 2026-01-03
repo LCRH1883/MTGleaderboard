@@ -78,6 +78,15 @@
         android:layout_marginTop="@dimen/default_padding_half"
         android:text="@string/options" />
 
+    <Button
+        android:id="@+id/complete_match_button"
+        style="@style/MenuButton.Round"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/menu_button_height"
+        android:layout_marginHorizontal="@dimen/default_padding"
+        android:layout_marginTop="@dimen/default_padding_half"
+        android:text="@string/complete_match" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

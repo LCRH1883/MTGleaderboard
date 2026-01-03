@@ -208,17 +208,16 @@ class SetupViewModel @Inject constructor(
             val color = runCatching {
                 PlayerColor.valueOf(participant.colorName)
             }.getOrDefault(PlayerColor.NONE)
+            val isGuest = participant.participantType == com.intagri.mtgleader.persistence.gamesession.GameParticipantType.GUEST
             PlayerSetupModel(
                 id = participant.seatIndex,
                 profile = profile,
                 color = color,
                 assignedUserId = participant.userId,
                 assignedDisplayName = participant.userId?.let { participant.displayName },
-                tempName = if (participant.userId.isNullOrBlank()) {
+                tempName = if (isGuest) {
                     participant.guestName ?: participant.displayName
-                } else {
-                    null
-                },
+                } else null,
             )
         }
         return ResumeGameInfo(

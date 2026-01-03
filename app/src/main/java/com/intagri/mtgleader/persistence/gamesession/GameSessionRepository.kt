@@ -5,6 +5,7 @@ import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 
 class GameSessionRepository @Inject constructor(
     private val gameSessionDao: GameSessionDao,
@@ -27,6 +28,23 @@ class GameSessionRepository @Inject constructor(
 
     suspend fun getLatestInProgress(): GameSessionWithParticipants? {
         return gameSessionDao.getLatestByStatus(GameSessionStatus.IN_PROGRESS)
+    }
+
+    fun observeCompletedSessions(): Flow<List<GameSessionWithParticipants>> {
+        return gameSessionDao.observeByStatus(GameSessionStatus.COMPLETED)
+    }
+
+    suspend fun updateSyncState(
+        localMatchId: String,
+        pendingSync: Boolean,
+        backendMatchId: String?,
+    ) {
+        gameSessionDao.updateSyncState(
+            localMatchId = localMatchId,
+            pendingSync = pendingSync,
+            backendMatchId = backendMatchId,
+            updatedAtEpoch = System.currentTimeMillis(),
+        )
     }
 
     fun encodeCounters(counters: List<CounterModel>): String {

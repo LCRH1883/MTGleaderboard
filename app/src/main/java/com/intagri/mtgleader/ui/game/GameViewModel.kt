@@ -16,9 +16,15 @@ import com.intagri.mtgleader.persistence.gamesession.GameSessionEntity
 import com.intagri.mtgleader.persistence.gamesession.GameSessionRepository
 import com.intagri.mtgleader.persistence.gamesession.GameSessionStatus
 import com.intagri.mtgleader.persistence.gamesession.GameSessionWithParticipants
+import com.intagri.mtgleader.persistence.gamesession.PlacementUtils
+import com.intagri.mtgleader.persistence.matches.MatchPayloadDto
+import com.intagri.mtgleader.persistence.matches.MatchPlayerDto
+import com.intagri.mtgleader.persistence.matches.MatchRepository
+import com.intagri.mtgleader.persistence.stats.local.LocalStatsUpdater
 import com.intagri.mtgleader.view.counter.edit.CounterSelectionUiModel
 import com.intagri.mtgleader.view.counter.edit.RearrangeCounterUiModel
 import com.intagri.mtgleader.view.TableLayoutPosition
+import com.intagri.mtgleader.util.TimestampUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.lang.IllegalArgumentException
 import java.util.ArrayDeque
@@ -34,6 +40,8 @@ import com.intagri.mtgleader.livedata.SingleLiveEvent
 class GameViewModel @Inject constructor(
     private val gameRepository: GameRepository,
     private val gameSessionRepository: GameSessionRepository,
+    private val matchRepository: MatchRepository,
+    private val localStatsUpdater: LocalStatsUpdater,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -95,6 +103,12 @@ class GameViewModel @Inject constructor(
     private val _turnTimerExpiredEvent = SingleLiveEvent<Unit>()
     val turnTimerExpiredEvent: LiveData<Unit> = _turnTimerExpiredEvent
 
+    private val _matchCompletedEvent = SingleLiveEvent<String>()
+    val matchCompletedEvent: LiveData<String> = _matchCompletedEvent
+
+    private val _confirmEliminationEvent = SingleLiveEvent<PendingElimination>()
+    val confirmEliminationEvent: LiveData<PendingElimination> = _confirmEliminationEvent
+
     private val _gamePaused = MutableLiveData<Boolean>(false)
     val gamePaused: LiveData<Boolean> = _gamePaused
 
@@ -137,6 +151,7 @@ class GameViewModel @Inject constructor(
     private val playerTurnTimeMs: MutableMap<Int, Long> = mutableMapOf()
     private val playerTurnsTaken: MutableMap<Int, Int> = mutableMapOf()
     private val eliminationInfo: MutableMap<Int, EliminationInfo> = mutableMapOf()
+    private val pendingEliminations: MutableMap<Int, PendingElimination> = mutableMapOf()
     private val assignedUsers: MutableMap<Int, AssignedUser> = mutableMapOf()
     private val guestNames: MutableMap<Int, String> = mutableMapOf()
 
@@ -144,6 +159,7 @@ class GameViewModel @Inject constructor(
     private var createdAtEpoch: Long = System.currentTimeMillis()
     private var startedAtEpoch: Long? = createdAtEpoch
     private var sessionReady = false
+    private var matchCompleted = false
 
     /**
      * Maps player id to an ordered list of selected counter template ids
@@ -176,9 +192,10 @@ class GameViewModel @Inject constructor(
         playerTurnTimeMs.clear()
         playerTurnsTaken.clear()
         eliminationInfo.clear()
-        guestNames.clear()
+        pendingEliminations.clear()
         guestNames.clear()
         assignedUsers.clear()
+        matchCompleted = false
         for (i in setupPlayers.indices) {
 
             val player = GamePlayerUiModel(
@@ -209,8 +226,10 @@ class GameViewModel @Inject constructor(
                 )
             }
             if (!assignedUsers.containsKey(i)) {
-                val baseGuest = setupPlayers[i].tempName ?: "Player ${i + 1}"
-                guestNames[i] = baseGuest
+                val tempName = setupPlayers[i].tempName
+                if (!tempName.isNullOrBlank()) {
+                    guestNames[i] = tempName
+                }
             }
 
             /**
@@ -605,8 +624,12 @@ class GameViewModel @Inject constructor(
     }
 
     private fun getTurnOrderIds(): List<Int> {
+        val aliveIds = getAlivePlayerIds()
+        if (aliveIds.isEmpty()) {
+            return playerOrderIds
+        }
         val clockwise = _playerRotationClockwise.value != false
-        val baseOrder = playerOrderIds
+        val baseOrder = playerOrderIds.filter { aliveIds.contains(it) }
         if (tabletopType == TabletopType.LIST || tabletopType == TabletopType.NONE) {
             return if (clockwise) baseOrder else baseOrder.reversed()
         }
@@ -645,6 +668,84 @@ class GameViewModel @Inject constructor(
         resetTurnTimer()
         initializePlayers()
         scheduleSave(true)
+    }
+
+    fun confirmElimination(playerId: Int) {
+        if (eliminationInfo.containsKey(playerId)) {
+            pendingEliminations.remove(playerId)
+            return
+        }
+        val pending = pendingEliminations.remove(playerId)
+        val eliminatedTurnNumber = pending?.eliminatedTurnNumber ?: (_turnCount.value ?: 1)
+        val eliminatedDuringSeatIndex = pending?.eliminatedDuringSeatIndex ?: _currentTurnPlayerId.value
+        eliminationInfo[playerId] = EliminationInfo(
+            eliminatedTurnNumber = eliminatedTurnNumber,
+            eliminatedDuringSeatIndex = eliminatedDuringSeatIndex,
+        )
+        val aliveIds = getAlivePlayerIds()
+        if (aliveIds.size <= 1) {
+            completeMatch()
+            return
+        }
+        if (_currentTurnPlayerId.value == playerId) {
+            moveToNextAliveTurn(playerId)
+        }
+        updatePlayerState()
+        scheduleSave()
+    }
+
+    fun cancelElimination(playerId: Int) {
+        pendingEliminations.remove(playerId)
+    }
+
+    fun completeMatch() {
+        if (matchCompleted) {
+            return
+        }
+        matchCompleted = true
+        if (!sessionReady) {
+            return
+        }
+        viewModelScope.launch {
+            val currentTurnNumber = _turnCount.value ?: 1
+            val currentTurnPlayerId = _currentTurnPlayerId.value
+            val nowElapsedMs = SystemClock.elapsedRealtime()
+            val currentTurnElapsedMs = resolveCurrentTurnElapsedMs(nowElapsedMs, currentTurnPlayerId)
+            stopTurnTimer()
+            stopGameClock()
+            autoSaveJob?.cancel()
+            pendingSaveJob?.cancel()
+
+            val baseParticipants = buildParticipantSnapshots(
+                currentTurnPlayerId = currentTurnPlayerId,
+                currentTurnElapsedMs = currentTurnElapsedMs,
+                placeOverrides = null,
+                includeActiveTurn = true,
+            )
+            val places = PlacementUtils.computePlaces(baseParticipants)
+            val participants = baseParticipants.map { participant ->
+                participant.copy(place = places[participant.seatIndex])
+            }
+            val session = buildSessionSnapshot(
+                status = GameSessionStatus.COMPLETED,
+                endedAtEpoch = System.currentTimeMillis(),
+                pendingSync = true,
+                currentTurnNumber = currentTurnNumber,
+                currentTurnPlayerId = currentTurnPlayerId,
+            )
+            gameSessionRepository.saveSnapshot(session, participants)
+            localStatsUpdater.recordCompletedMatch(participants)
+
+            val updatedAt = TimestampUtils.nowRfc3339Millis()
+            val payload = buildMatchPayload(participants)
+            matchRepository.recordMatchFromSession(
+                localId = localMatchId,
+                clientMatchId = localMatchId,
+                updatedAt = updatedAt,
+                payload = payload,
+            )
+            _matchCompletedEvent.value = localMatchId
+        }
     }
 
     fun pauseGame() {
@@ -741,6 +842,13 @@ class GameViewModel @Inject constructor(
         val eliminatedDuringSeatIndex: Int?,
     )
 
+    data class PendingElimination(
+        val playerId: Int,
+        val playerName: String,
+        val eliminatedTurnNumber: Int,
+        val eliminatedDuringSeatIndex: Int?,
+    )
+
     private data class AssignedUser(
         val userId: String,
         val displayName: String,
@@ -760,14 +868,21 @@ class GameViewModel @Inject constructor(
         if (eliminationInfo.containsKey(playerId)) {
             return
         }
+        if (pendingEliminations.containsKey(playerId)) {
+            return
+        }
         val life = playerMap[playerId]?.model?.life ?: return
         if (life > 0) {
             return
         }
-        eliminationInfo[playerId] = EliminationInfo(
+        val pending = PendingElimination(
+            playerId = playerId,
+            playerName = resolvePlayerDisplayName(playerId),
             eliminatedTurnNumber = _turnCount.value ?: 1,
-            eliminatedDuringSeatIndex = _currentTurnPlayerId.value
+            eliminatedDuringSeatIndex = _currentTurnPlayerId.value,
         )
+        pendingEliminations[playerId] = pending
+        _confirmEliminationEvent.value = pending
     }
 
     private fun startAutoSave() {
@@ -808,21 +923,38 @@ class GameViewModel @Inject constructor(
         val currentTurnNumber = _turnCount.value ?: 1
         val currentTurnPlayerId = _currentTurnPlayerId.value
         val nowElapsedMs = SystemClock.elapsedRealtime()
-        val currentTurnElapsedMs = when {
-            currentTurnPlayerId == null || currentTurnStartElapsedMs == null -> 0L
-            _gamePaused.value == true && turnPausedAtMs != null ->
-                (turnPausedAtMs ?: nowElapsedMs) - (currentTurnStartElapsedMs ?: nowElapsedMs)
-            _gamePaused.value == true -> 0L
-            else -> (nowElapsedMs - (currentTurnStartElapsedMs ?: nowElapsedMs)).coerceAtLeast(0L)
-        }.coerceAtLeast(0L)
-        val session = GameSessionEntity(
+        val currentTurnElapsedMs = resolveCurrentTurnElapsedMs(nowElapsedMs, currentTurnPlayerId)
+        val session = buildSessionSnapshot(
+            status = GameSessionStatus.IN_PROGRESS,
+            endedAtEpoch = null,
+            pendingSync = false,
+            currentTurnNumber = currentTurnNumber,
+            currentTurnPlayerId = currentTurnPlayerId,
+        )
+        val participants = buildParticipantSnapshots(
+            currentTurnPlayerId = currentTurnPlayerId,
+            currentTurnElapsedMs = currentTurnElapsedMs,
+            placeOverrides = null,
+            includeActiveTurn = false,
+        )
+        gameSessionRepository.saveSnapshot(session, participants)
+    }
+
+    private fun buildSessionSnapshot(
+        status: String,
+        endedAtEpoch: Long?,
+        pendingSync: Boolean,
+        currentTurnNumber: Int,
+        currentTurnPlayerId: Int?,
+    ): GameSessionEntity {
+        return GameSessionEntity(
             localMatchId = localMatchId,
             clientMatchId = localMatchId,
             createdAtEpoch = createdAtEpoch,
             startedAtEpoch = startedAtEpoch,
-            endedAtEpoch = null,
+            endedAtEpoch = endedAtEpoch,
             tabletopType = tabletopType.name,
-            status = GameSessionStatus.IN_PROGRESS,
+            status = status,
             startingSeatIndex = startingPlayerId,
             currentTurnNumber = currentTurnNumber,
             currentActiveSeatIndex = currentTurnPlayerId,
@@ -834,22 +966,33 @@ class GameViewModel @Inject constructor(
             turnTimerOvertime = _turnTimerOvertime.value == true,
             gamePaused = _gamePaused.value == true,
             gameElapsedSeconds = _gameElapsedSeconds.value ?: 0L,
-            pendingSync = false,
+            pendingSync = pendingSync,
             backendMatchId = null,
             updatedAtEpoch = System.currentTimeMillis(),
         )
-        val participants = playerMap.entries.mapNotNull { (seatIndex, player) ->
+    }
+
+    private fun buildParticipantSnapshots(
+        currentTurnPlayerId: Int?,
+        currentTurnElapsedMs: Long,
+        placeOverrides: Map<Int, Int>?,
+        includeActiveTurn: Boolean,
+    ): List<GameParticipantEntity> {
+        return playerMap.entries.mapNotNull { (seatIndex, player) ->
             val setupPlayer = setupPlayers.getOrNull(seatIndex) ?: return@mapNotNull null
             val assignedUser = assignedUsers[seatIndex]
             val guestName = guestNames[seatIndex] ?: setupPlayer.tempName
-            val fallbackName = guestName
-                ?: setupPlayer.profile?.name
-                ?: "Player ${seatIndex + 1}"
-            val displayName = assignedUser?.displayName ?: fallbackName
-            val participantType = if (assignedUser != null) {
-                GameParticipantType.ACCOUNT
+            val isGuest = assignedUser == null && !guestName.isNullOrBlank()
+            val fallbackName = if (isGuest) {
+                guestName
             } else {
-                GameParticipantType.GUEST
+                setupPlayer.profile?.name
+            } ?: "Player ${seatIndex + 1}"
+            val displayName = assignedUser?.displayName ?: fallbackName
+            val participantType = when {
+                assignedUser != null -> GameParticipantType.ACCOUNT
+                isGuest -> GameParticipantType.GUEST
+                else -> GameParticipantType.LOCAL_PROFILE
             }
             val elimination = eliminationInfo[seatIndex]
             val baseTurnTimeMs = playerTurnTimeMs[seatIndex] ?: 0L
@@ -858,13 +1001,16 @@ class GameViewModel @Inject constructor(
             } else {
                 baseTurnTimeMs
             }
+            val turnsTaken = (playerTurnsTaken[seatIndex] ?: 0) + if (
+                includeActiveTurn && seatIndex == currentTurnPlayerId
+            ) 1 else 0
             GameParticipantEntity(
                 localMatchId = localMatchId,
                 seatIndex = seatIndex,
                 participantType = participantType,
                 profileName = setupPlayer.profile?.name,
                 userId = assignedUser?.userId,
-                guestName = if (assignedUser == null) guestName ?: fallbackName else null,
+                guestName = if (isGuest) guestName else null,
                 displayName = displayName,
                 colorName = setupPlayer.color.name,
                 startingLife = startingLife,
@@ -872,12 +1018,97 @@ class GameViewModel @Inject constructor(
                 countersJson = gameSessionRepository.encodeCounters(player.model.counters),
                 eliminatedTurnNumber = elimination?.eliminatedTurnNumber,
                 eliminatedDuringSeatIndex = elimination?.eliminatedDuringSeatIndex,
-                place = null,
+                place = placeOverrides?.get(seatIndex),
                 totalTurnTimeMs = totalTurnTimeMs,
-                turnsTaken = playerTurnsTaken[seatIndex],
+                turnsTaken = turnsTaken,
             )
         }
-        gameSessionRepository.saveSnapshot(session, participants)
+    }
+
+    private fun resolvePlayerDisplayName(playerId: Int): String {
+        val setupPlayer = setupPlayers.getOrNull(playerId)
+        val assignedUser = assignedUsers[playerId]
+        val guestName = guestNames[playerId] ?: setupPlayer?.tempName
+        val isGuest = assignedUser == null && !guestName.isNullOrBlank()
+        val fallback = if (isGuest) {
+            guestName
+        } else {
+            setupPlayer?.profile?.name
+        } ?: "Player ${playerId + 1}"
+        return assignedUser?.displayName ?: fallback
+    }
+
+    private fun getAlivePlayerIds(): List<Int> {
+        return playerOrderIds.filter { !eliminationInfo.containsKey(it) }
+    }
+
+    private fun moveToNextAliveTurn(eliminatedPlayerId: Int) {
+        val alive = getAlivePlayerIds()
+        if (alive.isEmpty()) {
+            return
+        }
+        val order = playerOrderIds
+        val eliminatedIndex = order.indexOf(eliminatedPlayerId)
+        val nextAlive = if (eliminatedIndex == -1) {
+            alive.first()
+        } else {
+            (1..order.size)
+                .map { offset -> order[(eliminatedIndex + offset) % order.size] }
+                .firstOrNull { alive.contains(it) } ?: alive.first()
+        }
+        _currentTurnPlayerId.value = nextAlive
+        currentTurnStartElapsedMs = SystemClock.elapsedRealtime()
+        resetTurnTimer()
+    }
+
+    private fun buildMatchPayload(
+        participants: List<GameParticipantEntity>,
+    ): MatchPayloadDto {
+        val winnerSeat = participants.filter { it.place == 1 }
+            .minByOrNull { it.seatIndex }
+            ?.seatIndex
+        val durationSeconds = _gameElapsedSeconds.value ?: 0L
+        val players = participants.map { participant ->
+            val guestName = when (participant.participantType) {
+                GameParticipantType.LOCAL_PROFILE -> participant.profileName
+                GameParticipantType.GUEST -> participant.guestName ?: participant.displayName
+                else -> null
+            }
+            MatchPlayerDto(
+                seatIndex = participant.seatIndex,
+                seat = participant.seatIndex,
+                userId = participant.userId,
+                guestName = guestName,
+                displayName = participant.displayName,
+                profileName = participant.profileName,
+                life = participant.currentLife,
+                counters = emptyList(),
+                place = participant.place,
+                eliminatedTurnNumber = participant.eliminatedTurnNumber,
+                eliminatedDuringSeatIndex = participant.eliminatedDuringSeatIndex,
+                totalTurnTimeMs = participant.totalTurnTimeMs,
+                turnsTaken = participant.turnsTaken,
+            )
+        }
+        return MatchPayloadDto(
+            players = players,
+            winnerSeat = winnerSeat,
+            durationSeconds = durationSeconds,
+            tabletopType = tabletopType.name,
+        )
+    }
+
+    private fun resolveCurrentTurnElapsedMs(
+        nowElapsedMs: Long,
+        currentTurnPlayerId: Int?,
+    ): Long {
+        return when {
+            currentTurnPlayerId == null || currentTurnStartElapsedMs == null -> 0L
+            _gamePaused.value == true && turnPausedAtMs != null ->
+                (turnPausedAtMs ?: nowElapsedMs) - (currentTurnStartElapsedMs ?: nowElapsedMs)
+            _gamePaused.value == true -> 0L
+            else -> (nowElapsedMs - (currentTurnStartElapsedMs ?: nowElapsedMs)).coerceAtLeast(0L)
+        }.coerceAtLeast(0L)
     }
 
     private suspend fun restoreSession(matchId: String) {
@@ -940,7 +1171,10 @@ class GameViewModel @Inject constructor(
                     username = null,
                     avatarUrl = null,
                 )
-            } else if (!participant.guestName.isNullOrBlank()) {
+            } else if (
+                participant.participantType == GameParticipantType.GUEST &&
+                !participant.guestName.isNullOrBlank()
+            ) {
                 guestNames[playerId] = participant.guestName
             }
         }

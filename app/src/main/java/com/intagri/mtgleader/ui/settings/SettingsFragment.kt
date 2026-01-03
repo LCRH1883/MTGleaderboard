@@ -15,6 +15,7 @@ import com.intagri.mtgleader.ui.settings.notifications.NotificationsFragment
 import com.intagri.mtgleader.ui.settings.counters.manage.ManageCountersFragment
 import com.intagri.mtgleader.ui.settings.profiles.manage.ManageProfilesFragment
 import com.intagri.mtgleader.ui.settings.user.UserSettingsFragment
+import com.intagri.mtgleader.ui.history.MatchHistoryFragment
 import com.intagri.mtgleader.ui.setup.theme.ThemeActivity
 
 class SettingsFragment: Fragment() {
@@ -44,6 +45,7 @@ class SettingsFragment: Fragment() {
         val userSettings: View = view.findViewById(R.id.user_settings)
         val friends: View = view.findViewById(R.id.friends)
         val notifications: View = view.findViewById(R.id.notifications)
+        val matchHistory: View = view.findViewById(R.id.match_history)
         val manageProfiles: View = view.findViewById(R.id.manage_profiles)
         val manageCounters: View = view.findViewById(R.id.manage_counters)
         val themes: View = view.findViewById(R.id.themes)
@@ -69,6 +71,13 @@ class SettingsFragment: Fragment() {
             requireActivity().supportFragmentManager.beginTransaction()
                 .replace(R.id.container, f)
                 .addToBackStack(NotificationsFragment.TAG)
+                .commit()
+        }
+        matchHistory.setOnClickListener {
+            val f = MatchHistoryFragment.newInstance()
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.container, f)
+                .addToBackStack(MatchHistoryFragment.TAG)
                 .commit()
         }
         manageProfiles.setOnClickListener {

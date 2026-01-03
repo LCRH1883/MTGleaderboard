@@ -33,6 +33,10 @@
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity
+            android:name=".ui.matchdetails.MatchDetailsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".ui.settings.profiles.edit.EditProfileActivity"
             android:exported="false"
             android:screenOrientation="portrait" />

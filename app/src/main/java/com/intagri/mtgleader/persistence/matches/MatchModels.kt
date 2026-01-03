@@ -12,11 +12,29 @@ data class MatchCounterDto(
 
 @JsonClass(generateAdapter = true)
 data class MatchPlayerDto(
-    val seat: Int,
+    @Json(name = "seat_index")
+    val seatIndex: Int,
+    @Json(name = "seat")
+    val seat: Int? = null,
+    @Json(name = "user_id")
+    val userId: String? = null,
+    @Json(name = "guest_name")
+    val guestName: String? = null,
+    @Json(name = "display_name")
+    val displayName: String? = null,
     @Json(name = "profile_name")
     val profileName: String? = null,
-    val life: Int,
+    val life: Int? = null,
     val counters: List<MatchCounterDto> = emptyList(),
+    val place: Int? = null,
+    @Json(name = "eliminated_turn_number")
+    val eliminatedTurnNumber: Int? = null,
+    @Json(name = "eliminated_during_seat_index")
+    val eliminatedDuringSeatIndex: Int? = null,
+    @Json(name = "total_turn_time_ms")
+    val totalTurnTimeMs: Long? = null,
+    @Json(name = "turns_taken")
+    val turnsTaken: Int? = null,
 )
 
 @JsonClass(generateAdapter = true)

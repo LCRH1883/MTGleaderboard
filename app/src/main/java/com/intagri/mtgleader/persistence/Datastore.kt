@@ -36,6 +36,7 @@ interface Datastore {
     var friendRequestNotificationsEnabled: Boolean
     var registeredFcmToken: String?
     var registeredFcmTokenUserId: String?
+    var uploadMatchesWifiOnly: Boolean
     val version: Int
 
     //Mark as having completed migration + setup for current app version

@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.intagri.mtgleader.persistence.auth.AuthRepository
 import com.intagri.mtgleader.persistence.auth.AuthUser
 import com.intagri.mtgleader.persistence.notifications.NotificationsRepository
+import com.intagri.mtgleader.persistence.Datastore
 import com.intagri.mtgleader.persistence.userprofile.UserProfileRepository
 import com.intagri.mtgleader.persistence.userprofile.UserProfileLocalStore
 import com.intagri.mtgleader.persistence.sync.AvatarUploadPayload
@@ -32,6 +33,7 @@ class UserSettingsViewModel @Inject constructor(
     private val userProfileRepository: UserProfileRepository,
     private val userProfileLocalStore: UserProfileLocalStore,
     private val notificationsRepository: NotificationsRepository,
+    private val datastore: Datastore,
     private val syncQueueDao: SyncQueueDao,
     moshi: Moshi,
 ) : ViewModel() {
@@ -39,6 +41,8 @@ class UserSettingsViewModel @Inject constructor(
     private val _state = MutableLiveData(UserSettingsState())
     val state: LiveData<UserSettingsState> = _state
     val events = SingleLiveEvent<UserSettingsEvent>()
+    private val _uploadWifiOnly = MutableLiveData(datastore.uploadMatchesWifiOnly)
+    val uploadWifiOnly: LiveData<Boolean> = _uploadWifiOnly
     private val displayNameAdapter = moshi.adapter(DisplayNamePayload::class.java)
     private val avatarAdapter = moshi.adapter(AvatarUploadPayload::class.java)
 
@@ -116,6 +120,11 @@ class UserSettingsViewModel @Inject constructor(
                 _state.value = UserSettingsState(user = existingUser, error = e)
             }
         }
+    }
+
+    fun setUploadWifiOnly(enabled: Boolean) {
+        datastore.uploadMatchesWifiOnly = enabled
+        _uploadWifiOnly.value = enabled
     }
 
     private suspend fun enqueueDisplayNameSync(displayName: String?, updatedAt: String) {

@@ -2,9 +2,15 @@ package com.intagri.mtgleader.persistence.entities
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 
 @Entity(
     tableName = PlayerProfileCounterTemplateCrossRefEntity.TABLE_PLAYER_COUNTER_CROSS_REFS,
+    indices = [
+        Index(
+            value = [PlayerProfileCounterTemplateCrossRefEntity.COLUMN_COUNTER_TEMPLATE_ID]
+        )
+    ],
     primaryKeys = [PlayerProfileCounterTemplateCrossRefEntity.COLUMN_PLAYER_PROFILE_ID,
         PlayerProfileCounterTemplateCrossRefEntity.COLUMN_COUNTER_TEMPLATE_ID]
 )

@@ -15,7 +15,11 @@ import com.intagri.mtgleader.persistence.Datastore
 import com.intagri.mtgleader.persistence.DatastoreImpl
 import com.intagri.mtgleader.persistence.GameRepository
 import com.intagri.mtgleader.persistence.GameRepositoryImpl
+import com.intagri.mtgleader.persistence.gamesession.GameSessionRepository
+import com.intagri.mtgleader.persistence.matches.MatchRepository
+import com.intagri.mtgleader.persistence.stats.local.LocalStatsUpdater
 import io.mockk.MockKAnnotations
+import io.mockk.mockk
 import junit.framework.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
@@ -23,6 +27,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.intagri.mtgleader.data.MockDatabaseFactory
+import com.squareup.moshi.Moshi
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.O], application = TestApplication::class)
@@ -40,6 +46,7 @@ class GameViewModelTest {
     private lateinit var viewModel: GameViewModel
 
     private lateinit var datastore: Datastore
+    private lateinit var gameSessionRepository: GameSessionRepository
 
     @Before
     fun setup() {
@@ -47,6 +54,10 @@ class GameViewModelTest {
         datastore =
             DatastoreImpl(ApplicationProvider.getApplicationContext())
         gameRepository = GameRepositoryImpl(datastore)
+        val db = MockDatabaseFactory.createEmptyDatabase()
+        gameSessionRepository = GameSessionRepository(db.gameSessionDao(), Moshi.Builder().build())
+        val matchRepository = mockk<MatchRepository>(relaxed = true)
+        val localStatsUpdater = mockk<LocalStatsUpdater>(relaxed = true)
 
         val counterTemplate1 = CounterTemplateModel(
             id = 1,
@@ -110,7 +121,13 @@ class GameViewModelTest {
         datastore.startingLife = 15
         datastore.numberOfPlayers = 3
         datastore.tabletopType = TabletopType.THREE_CIRCLE
-        viewModel = GameViewModel(gameRepository, savedStateHandle)
+        viewModel = GameViewModel(
+            gameRepository,
+            gameSessionRepository,
+            matchRepository,
+            localStatsUpdater,
+            savedStateHandle,
+        )
     }
 
     @Test

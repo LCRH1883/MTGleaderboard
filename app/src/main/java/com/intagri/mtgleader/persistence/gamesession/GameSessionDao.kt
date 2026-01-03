@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface GameSessionDao {
@@ -41,6 +42,32 @@ interface GameSessionDao {
         """
     )
     suspend fun getLatestByStatus(status: String): GameSessionWithParticipants?
+
+    @Transaction
+    @Query(
+        """
+        SELECT * FROM game_sessions
+        WHERE status = :status
+        ORDER BY endedAtEpoch DESC, updatedAtEpoch DESC
+        """
+    )
+    fun observeByStatus(status: String): Flow<List<GameSessionWithParticipants>>
+
+    @Query(
+        """
+        UPDATE game_sessions
+        SET pendingSync = :pendingSync,
+            backendMatchId = :backendMatchId,
+            updatedAtEpoch = :updatedAtEpoch
+        WHERE localMatchId = :localMatchId
+        """
+    )
+    suspend fun updateSyncState(
+        localMatchId: String,
+        pendingSync: Boolean,
+        backendMatchId: String?,
+        updatedAtEpoch: Long,
+    )
 
     @Query("UPDATE game_sessions SET status = :status WHERE localMatchId = :localMatchId")
     suspend fun updateStatus(localMatchId: String, status: String)

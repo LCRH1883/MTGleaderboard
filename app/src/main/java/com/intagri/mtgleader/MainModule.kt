@@ -14,6 +14,7 @@ import com.intagri.mtgleader.persistence.friends.FriendRequestDao
 import com.intagri.mtgleader.persistence.friends.FriendsApi
 import com.intagri.mtgleader.persistence.friends.FriendsRepository
 import com.intagri.mtgleader.persistence.gamesession.GameSessionDao
+import com.intagri.mtgleader.persistence.gamesession.GameSessionRepository
 import com.intagri.mtgleader.persistence.images.ImageApi
 import com.intagri.mtgleader.persistence.images.ImageRepository
 import com.intagri.mtgleader.persistence.images.ImageRepositoryImpl
@@ -26,6 +27,8 @@ import com.intagri.mtgleader.persistence.sync.SyncMetadataDao
 import com.intagri.mtgleader.persistence.sync.SyncQueueDao
 import com.intagri.mtgleader.persistence.stats.StatsApi
 import com.intagri.mtgleader.persistence.stats.StatsRepository
+import com.intagri.mtgleader.persistence.stats.local.LocalStatsDao
+import com.intagri.mtgleader.persistence.stats.local.LocalStatsRepository
 import com.intagri.mtgleader.persistence.userprofile.UserProfileDao
 import com.intagri.mtgleader.persistence.userprofile.UserProfileLocalStore
 import com.intagri.mtgleader.persistence.userprofile.UserProfileRepository
@@ -80,7 +83,9 @@ object MainModule {
                 AppDatabase.MIGRATION_1_2,
                 AppDatabase.MIGRATION_2_3,
                 AppDatabase.MIGRATION_3_4,
-                AppDatabase.MIGRATION_4_5
+                AppDatabase.MIGRATION_4_5,
+                AppDatabase.MIGRATION_5_6,
+                AppDatabase.MIGRATION_6_7
             )
             .build()
     }
@@ -135,6 +140,12 @@ object MainModule {
     @Singleton
     fun providesSyncMetadataDao(appDatabase: AppDatabase): SyncMetadataDao {
         return appDatabase.syncMetadataDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providesLocalStatsDao(appDatabase: AppDatabase): LocalStatsDao {
+        return appDatabase.localStatsDao()
     }
 
     @Provides
@@ -284,6 +295,8 @@ object MainModule {
         matchDao: MatchDao,
         syncQueueDao: SyncQueueDao,
         userProfileLocalStore: UserProfileLocalStore,
+        gameSessionRepository: GameSessionRepository,
+        datastore: Datastore,
         moshi: Moshi,
         @ApplicationContext appContext: Context,
     ): MatchRepository {
@@ -292,6 +305,8 @@ object MainModule {
             matchDao,
             syncQueueDao,
             userProfileLocalStore,
+            gameSessionRepository,
+            datastore,
             moshi,
             appContext,
         )
@@ -312,6 +327,12 @@ object MainModule {
     @Singleton
     fun providesStatsRepository(statsApi: StatsApi): StatsRepository {
         return StatsRepository(statsApi)
+    }
+
+    @Provides
+    @Singleton
+    fun providesLocalStatsRepository(localStatsDao: LocalStatsDao): LocalStatsRepository {
+        return LocalStatsRepository(localStatsDao)
     }
 
     @Provides

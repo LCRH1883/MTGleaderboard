@@ -37,6 +37,7 @@ class GameOptionsDialogFragment : DialogFragment() {
     private lateinit var diceButton: View
     private lateinit var selectPlayerButton: View
     private lateinit var randomPlayerButton: View
+    private lateinit var completeMatchButton: View
     private lateinit var resetButton: View
     private lateinit var exitButton: View
 
@@ -94,6 +95,10 @@ class GameOptionsDialogFragment : DialogFragment() {
             GameDiceDialogFragment.newInstance()
                 .show(parentFragmentManager, TAG_GAME_DICE)
         }
+        completeMatchButton = view.findViewById(R.id.complete_match_button)
+        completeMatchButton.setOnClickListener {
+            listener?.onOpenCompletePrompt()
+        }
         resetButton = view.findViewById(R.id.reset_game_button)
         resetButton.setOnClickListener {
             listener?.onOpenResetPrompt()
@@ -116,5 +121,6 @@ class GameOptionsDialogFragment : DialogFragment() {
     interface Listener {
         fun onOpenExitPrompt()
         fun onOpenResetPrompt()
+        fun onOpenCompletePrompt()
     }
 }

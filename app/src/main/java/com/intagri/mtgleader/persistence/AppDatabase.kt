@@ -22,6 +22,9 @@ import com.intagri.mtgleader.persistence.sync.SyncQueueDao
 import com.intagri.mtgleader.persistence.sync.SyncQueueEntity
 import com.intagri.mtgleader.persistence.userprofile.UserProfileDao
 import com.intagri.mtgleader.persistence.userprofile.UserProfileEntity
+import com.intagri.mtgleader.persistence.stats.local.LocalHeadToHeadEntity
+import com.intagri.mtgleader.persistence.stats.local.LocalStatsDao
+import com.intagri.mtgleader.persistence.stats.local.LocalStatsSummaryEntity
 
 @Database(
     entities = [
@@ -36,8 +39,10 @@ import com.intagri.mtgleader.persistence.userprofile.UserProfileEntity
         GameParticipantEntity::class,
         SyncQueueEntity::class,
         SyncMetadataEntity::class,
+        LocalStatsSummaryEntity::class,
+        LocalHeadToHeadEntity::class,
     ],
-    version = 5,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -49,6 +54,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun gameSessionDao(): GameSessionDao
     abstract fun syncQueueDao(): SyncQueueDao
     abstract fun syncMetadataDao(): SyncMetadataDao
+    abstract fun localStatsDao(): LocalStatsDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -198,6 +204,50 @@ abstract class AppDatabase : RoomDatabase() {
                         turnsTaken INTEGER,
                         PRIMARY KEY(localMatchId, seatIndex)
                     )
+                    """.trimIndent()
+                )
+            }
+        }
+
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS local_stats_summary (
+                        ownerType TEXT NOT NULL,
+                        ownerId TEXT NOT NULL,
+                        gamesPlayed INTEGER NOT NULL,
+                        wins INTEGER NOT NULL,
+                        losses INTEGER NOT NULL,
+                        updatedAtEpoch INTEGER NOT NULL,
+                        PRIMARY KEY(ownerType, ownerId)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS local_head_to_head (
+                        ownerType TEXT NOT NULL,
+                        ownerId TEXT NOT NULL,
+                        opponentType TEXT NOT NULL,
+                        opponentId TEXT NOT NULL,
+                        opponentDisplayName TEXT NOT NULL,
+                        wins INTEGER NOT NULL,
+                        losses INTEGER NOT NULL,
+                        updatedAtEpoch INTEGER NOT NULL,
+                        PRIMARY KEY(ownerType, ownerId, opponentType, opponentId)
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS index_player_counter_cross_refs_x_counter_template_id
+                    ON player_counter_cross_refs(x_counter_template_id)
                     """.trimIndent()
                 )
             }
