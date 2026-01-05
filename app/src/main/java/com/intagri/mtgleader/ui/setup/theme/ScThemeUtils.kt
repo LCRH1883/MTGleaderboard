@@ -1,7 +1,6 @@
 package com.intagri.mtgleader.ui.setup.theme
 
 import android.content.Context
-import android.content.res.Configuration
 import android.graphics.drawable.Drawable
 import android.util.TypedValue
 import androidx.annotation.AttrRes
@@ -19,17 +18,7 @@ object ScThemeUtils {
         return if (theme != SpellCounterTheme.NOT_SET) {
             theme
         } else {
-            when (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
-                Configuration.UI_MODE_NIGHT_YES -> {
-                    SpellCounterTheme.DARK
-                }
-                Configuration.UI_MODE_NIGHT_NO -> {
-                    SpellCounterTheme.KARN
-                }
-                else -> {
-                    SpellCounterTheme.KARN
-                }
-            }
+            SpellCounterTheme.DARK
         }
     }
 

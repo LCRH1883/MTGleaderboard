@@ -14,7 +14,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
 import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.lifecycleScope
 import com.intagri.mtgleader.R
@@ -25,7 +24,6 @@ import com.intagri.mtgleader.ui.auth.LoginFragment
 import com.intagri.mtgleader.ui.game.GameActivity
 import com.intagri.mtgleader.ui.settings.SettingsFragment
 import com.intagri.mtgleader.ui.settings.friends.FriendsFragment
-import com.intagri.mtgleader.ui.settings.friends.FriendsViewModel
 import com.intagri.mtgleader.ui.settings.user.UserSettingsFragment
 import com.intagri.mtgleader.ui.stats.StatsFragment
 import com.intagri.mtgleader.ui.setup.tabletop.SetupTabletopFragment
@@ -67,7 +65,6 @@ class SetupFragment : Fragment(), CompoundButton.OnCheckedChangeListener {
     lateinit var authRepository: AuthRepository
 
     private val viewModel: SetupViewModel by activityViewModels()
-    private val friendsViewModel: FriendsViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -354,7 +351,6 @@ class SetupFragment : Fragment(), CompoundButton.OnCheckedChangeListener {
     override fun onResume() {
         super.onResume()
         viewModel.refresh()
-        friendsViewModel.refreshFriends()
     }
 
     private fun setTabletopLayoutButtonContent(

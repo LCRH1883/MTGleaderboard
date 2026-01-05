@@ -20,6 +20,7 @@ class DatastoreImpl(context: Context) : Datastore {
         //NOTE: this needs to be different than the legacy theme which was "key_theme"
         private const val KEY_THEME = "key_v3_theme"
         private const val KEY_FRIEND_REQUEST_NOTIFICATIONS = "key_friend_request_notifications"
+        private const val KEY_NOTIFICATION_PERMISSION_REQUESTED = "key_notification_permission_requested"
         private const val KEY_FCM_REGISTERED_TOKEN = "key_fcm_registered_token"
         private const val KEY_FCM_REGISTERED_USER_ID = "key_fcm_registered_user_id"
         private const val KEY_UPLOAD_MATCHES_WIFI_ONLY = "key_upload_matches_wifi_only"
@@ -57,6 +58,9 @@ class DatastoreImpl(context: Context) : Datastore {
     override var friendRequestNotificationsEnabled: Boolean
         get() = prefs.getBoolean(KEY_FRIEND_REQUEST_NOTIFICATIONS, true)
         set(value) = getEditor().putBoolean(KEY_FRIEND_REQUEST_NOTIFICATIONS, value).apply()
+    override var hasRequestedNotificationPermission: Boolean
+        get() = prefs.getBoolean(KEY_NOTIFICATION_PERMISSION_REQUESTED, false)
+        set(value) = getEditor().putBoolean(KEY_NOTIFICATION_PERMISSION_REQUESTED, value).apply()
     override var registeredFcmToken: String?
         get() = prefs.getString(KEY_FCM_REGISTERED_TOKEN, null)
         set(value) = getEditor().putString(KEY_FCM_REGISTERED_TOKEN, value).apply()

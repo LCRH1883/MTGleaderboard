@@ -5,7 +5,6 @@ import android.net.Uri
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.intagri.mtgleader.persistence.auth.AuthApi
-import com.intagri.mtgleader.persistence.friends.FriendActionRequest
 import com.intagri.mtgleader.persistence.friends.FriendsRepository
 import com.intagri.mtgleader.persistence.matches.MatchRepository
 import com.intagri.mtgleader.persistence.userprofile.UserProfileLocalStore
@@ -200,14 +199,20 @@ class FullSyncWorker(
             }
             SyncAction.ACCEPT,
             SyncAction.DECLINE,
-            SyncAction.CANCEL -> {
-                val requestId = payload.requestId ?: return ProcessOutcome.Delete
+            SyncAction.CANCEL,
+            SyncAction.REMOVE -> {
+                val requestId = payload.requestId
+                val userId = payload.userId
+                val resolvedId = when (item.action) {
+                    SyncAction.REMOVE -> userId?.trim()
+                    else -> requestId?.trim()
+                } ?: return ProcessOutcome.Delete
                 try {
-                    val request = FriendActionRequest(updatedAt = payload.updatedAt)
                     when (item.action) {
-                        SyncAction.ACCEPT -> friendsRepository.acceptRequest(requestId, request)
-                        SyncAction.DECLINE -> friendsRepository.declineRequest(requestId, request)
-                        SyncAction.CANCEL -> friendsRepository.cancelRequest(requestId, request)
+                        SyncAction.ACCEPT -> friendsRepository.acceptRequest(resolvedId)
+                        SyncAction.DECLINE -> friendsRepository.declineRequest(resolvedId)
+                        SyncAction.CANCEL -> friendsRepository.cancelRequest(resolvedId)
+                        SyncAction.REMOVE -> friendsRepository.removeFriend(resolvedId)
                     }
                     friendsRepository.refreshConnections()
                     ProcessOutcome.Delete

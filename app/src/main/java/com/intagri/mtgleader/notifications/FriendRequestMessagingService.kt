@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.intagri.mtgleader.R
@@ -29,19 +30,18 @@ class FriendRequestMessagingService : FirebaseMessagingService() {
     @Inject lateinit var notificationsRepository: NotificationsRepository
 
     override fun onMessageReceived(message: RemoteMessage) {
-        if (!datastore.friendRequestNotificationsEnabled) {
+        val type = resolveEventType(message.data)
+        if (type != EVENT_FRIEND_REQUEST) {
             return
         }
-        val data = message.data
-        val eventType = data["type"] ?: data["event"]
-        if (eventType != EVENT_FRIEND_REQUEST) {
-            return
-        }
-        if (!NotificationManagerCompat.from(this).areNotificationsEnabled()) {
-            return
-        }
-        showFriendRequestNotification(message)
+        // Trigger sync so the UI fetches the latest friend connections.
         SyncScheduler.enqueueNow(applicationContext)
+        if (!datastore.friendRequestNotificationsEnabled || !hasNotificationPermission()) {
+            return
+        }
+        if (shouldShowNotification(message.data)) {
+            showFriendRequestNotification(message)
+        }
     }
 
     private fun showFriendRequestNotification(message: RemoteMessage) {
@@ -107,9 +107,36 @@ class FriendRequestMessagingService : FirebaseMessagingService() {
         manager.createNotificationChannel(channel)
     }
 
+    private fun resolveEventType(data: Map<String, String>): String? {
+        return data["type"]
+            ?: data["event"]
+            ?: data["event_type"]
+            ?: data["kind"]
+            ?: data["category"]
+    }
+
+    private fun shouldShowNotification(data: Map<String, String>): Boolean {
+        val status = data["status"] ?: data["action"]
+        if (!status.isNullOrBlank() && !status.equals(STATUS_INCOMING, ignoreCase = true)) {
+            return false
+        }
+        return true
+    }
+
+    private fun hasNotificationPermission(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return true
+        }
+        return ContextCompat.checkSelfPermission(
+            this,
+            android.Manifest.permission.POST_NOTIFICATIONS
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    }
+
     companion object {
         private const val CHANNEL_FRIEND_REQUESTS = "friend_requests"
         private const val EVENT_FRIEND_REQUEST = "friend_request"
+        private const val STATUS_INCOMING = "incoming"
         private const val REQUEST_CODE_FRIEND_REQUEST = 2001
         private const val NOTIFICATION_ID_FRIEND_REQUEST = 3001
     }

@@ -18,6 +18,9 @@ interface FriendDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(item: FriendEntity)
 
+    @Query("DELETE FROM friends WHERE userId = :userId")
+    suspend fun deleteByUserId(userId: String)
+
     @Query("DELETE FROM friends")
     suspend fun clear()
 
@@ -55,6 +58,12 @@ interface FriendRequestDao {
 
     @Query("SELECT * FROM friend_requests WHERE requestId = :requestId LIMIT 1")
     suspend fun getById(requestId: String): FriendRequestEntity?
+
+    @Query("SELECT * FROM friend_requests WHERE userId = :userId LIMIT 1")
+    suspend fun getByUserId(userId: String): FriendRequestEntity?
+
+    @Query("SELECT * FROM friend_requests WHERE username = :username LIMIT 1")
+    suspend fun getByUsername(username: String): FriendRequestEntity?
 
     @Transaction
     suspend fun replaceAllRequests(

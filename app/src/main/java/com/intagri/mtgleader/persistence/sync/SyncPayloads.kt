@@ -17,6 +17,7 @@ object SyncAction {
     const val ACCEPT = "ACCEPT"
     const val DECLINE = "DECLINE"
     const val CANCEL = "CANCEL"
+    const val REMOVE = "REMOVE"
     const val CREATE = "CREATE"
 }
 
@@ -40,6 +41,8 @@ data class AvatarUploadPayload(
 data class FriendRequestPayload(
     @Json(name = "request_id")
     val requestId: String? = null,
+    @Json(name = "user_id")
+    val userId: String? = null,
     val username: String? = null,
     @Json(name = "updated_at")
     val updatedAt: String? = null,

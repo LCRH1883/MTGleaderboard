@@ -192,6 +192,45 @@ object MainModule {
     fun providesAuthOkHttpClient(cookieJar: PersistentCookieJar): OkHttpClient {
         return OkHttpClient.Builder()
             .cookieJar(cookieJar)
+            .addInterceptor { chain ->
+                val request = chain.request()
+                if (request.url.encodedPath.contains("/v1/friends/requests/") &&
+                    request.method.equals("POST", ignoreCase = true)
+                ) {
+                    android.util.Log.d("FriendsHttp", "HTTP ${request.method} ${request.url.encodedPath}")
+                }
+                chain.proceed(request)
+            }
+            .addInterceptor { chain ->
+                val request = chain.request()
+                val path = request.url.encodedPath
+                val shouldLog = path.contains("/v1/friends/requests/") ||
+                    path.contains("/v1/friends/connections")
+                if (!shouldLog) {
+                    return@addInterceptor chain.proceed(request)
+                }
+                val requestBody = request.body
+                val requestBodyText = if (requestBody == null) {
+                    "<empty>"
+                } else if (requestBody.isDuplex() || requestBody.isOneShot()) {
+                    "<streaming>"
+                } else {
+                    val buffer = okio.Buffer()
+                    requestBody.writeTo(buffer)
+                    buffer.readUtf8()
+                }
+                android.util.Log.d(
+                    "FriendsWire",
+                    "REQUEST ${request.method} ${request.url} headers=${request.headers} body=$requestBodyText"
+                )
+                val response = chain.proceed(request)
+                val responseBody = response.peekBody(1024 * 1024)
+                android.util.Log.d(
+                    "FriendsWire",
+                    "RESPONSE ${response.code} ${request.url} headers=${response.headers} body=${responseBody.string()}"
+                )
+                response
+            }
             .build()
     }
 

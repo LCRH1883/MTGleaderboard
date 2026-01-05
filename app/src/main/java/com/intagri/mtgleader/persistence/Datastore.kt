@@ -34,6 +34,7 @@ interface Datastore {
     var tabletopType: TabletopType
     var theme: SpellCounterTheme
     var friendRequestNotificationsEnabled: Boolean
+    var hasRequestedNotificationPermission: Boolean
     var registeredFcmToken: String?
     var registeredFcmTokenUserId: String?
     var uploadMatchesWifiOnly: Boolean

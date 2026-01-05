@@ -117,6 +117,15 @@ class FriendsFragment : Fragment(), FriendActionListener {
                 FriendsEvent.AuthRequired -> {
                     showMessage(getString(R.string.friend_auth_required), isError = true)
                 }
+                FriendsEvent.FeatureDisabled -> {
+                    showMessage(getString(R.string.friend_feature_disabled), isError = true)
+                }
+            }
+        }
+
+        viewModel.actionError.observe(viewLifecycleOwner) { message ->
+            if (!message.isNullOrBlank()) {
+                showMessage(message, isError = true)
             }
         }
     }
@@ -130,7 +139,7 @@ class FriendsFragment : Fragment(), FriendActionListener {
         when (item.status) {
             FriendStatus.INCOMING -> viewModel.acceptRequest(item.id)
             FriendStatus.OUTGOING -> viewModel.cancelRequest(item.id)
-            FriendStatus.ACCEPTED -> {}
+            FriendStatus.ACCEPTED -> viewModel.removeFriend(item.id)
             FriendStatus.UNKNOWN -> {}
         }
     }

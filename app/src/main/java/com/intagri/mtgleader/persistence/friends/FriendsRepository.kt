@@ -1,6 +1,7 @@
 package com.intagri.mtgleader.persistence.friends
 
 import android.content.Context
+import android.util.Log
 import androidx.room.withTransaction
 import com.intagri.mtgleader.persistence.AppDatabase
 import com.intagri.mtgleader.persistence.sync.FriendRequestPayload
@@ -47,8 +48,8 @@ class FriendsRepository(
         }
     }
 
-    suspend fun refreshConnections() {
-        val etag = syncMetadataDao.get(FRIENDS_ETAG_KEY)
+    suspend fun refreshConnections(force: Boolean = false) {
+        val etag = if (force) null else syncMetadataDao.get(FRIENDS_ETAG_KEY)
         val response = friendsApi.getConnectionsWithEtag(etag)
         if (response.code() == 304) {
             return
@@ -80,16 +81,61 @@ class FriendsRepository(
         friendsApi.sendFriendRequest(FriendRequestCreate(username = username))
     }
 
-    suspend fun acceptRequest(id: String, request: FriendActionRequest? = null) {
-        friendsApi.acceptRequest(id, request)
+    suspend fun sendFriendRequestAndSync(username: String) {
+        try {
+            friendsApi.sendFriendRequest(FriendRequestCreate(username = username))
+            refreshConnections(force = true)
+        } catch (e: HttpException) {
+            when (e.code()) {
+                409 -> {
+                    if (!handleActionConflict(e)) {
+                        refreshConnections(force = true)
+                    }
+                }
+                else -> throw e
+            }
+        }
     }
 
-    suspend fun declineRequest(id: String, request: FriendActionRequest? = null) {
-        friendsApi.declineRequest(id, request)
+    suspend fun acceptRequest(id: String) {
+        friendsApi.acceptRequest(id)
     }
 
-    suspend fun cancelRequest(id: String, request: FriendActionRequest? = null) {
-        friendsApi.cancelRequest(id, request)
+    suspend fun declineRequest(id: String) {
+        friendsApi.declineRequest(id)
+    }
+
+    suspend fun cancelRequest(id: String) {
+        friendsApi.cancelRequest(id)
+    }
+
+    suspend fun acceptRequestAndSync(requestId: String) {
+        performRequestAction(requestId) { id ->
+            friendsApi.acceptRequest(id)
+        }
+    }
+
+    suspend fun declineRequestAndSync(requestId: String) {
+        performRequestAction(requestId) { id ->
+            friendsApi.declineRequest(id)
+        }
+    }
+
+    suspend fun cancelRequestAndSync(requestId: String) {
+        performRequestAction(requestId) { id ->
+            friendsApi.cancelRequest(id)
+        }
+    }
+
+    suspend fun removeFriend(id: String) {
+        try {
+            friendsApi.removeFriend(id)
+        } catch (e: HttpException) {
+            if (e.code() != 404 && e.code() != 405) {
+                throw e
+            }
+            friendsApi.deleteFriend(id)
+        }
     }
 
     suspend fun queueSendFriendRequest(username: String) {
@@ -117,10 +163,11 @@ class FriendsRepository(
     }
 
     suspend fun queueAcceptRequest(requestId: String) {
-        val updatedAt = TimestampUtils.nowRfc3339Millis()
+        val updatedAt = resolveRequestUpdatedAt(requestId)
         val existing = friendRequestDao.getById(requestId)
         if (existing != null) {
             friendRequestDao.deleteById(requestId)
+            val resolvedUpdatedAt = TimestampUtils.nowRfc3339Millis()
             friendDao.upsert(
                 FriendEntity(
                     userId = existing.userId,
@@ -128,7 +175,7 @@ class FriendsRepository(
                     displayName = existing.displayName,
                     avatarPath = existing.avatarPath,
                     avatarUpdatedAt = existing.avatarUpdatedAt,
-                    updatedAt = updatedAt,
+                    updatedAt = resolvedUpdatedAt,
                     lastSeenAt = null,
                 )
             )
@@ -140,7 +187,7 @@ class FriendsRepository(
     }
 
     suspend fun queueDeclineRequest(requestId: String) {
-        val updatedAt = TimestampUtils.nowRfc3339Millis()
+        val updatedAt = resolveRequestUpdatedAt(requestId)
         friendRequestDao.deleteById(requestId)
         enqueueFriendRequest(
             action = SyncAction.DECLINE,
@@ -149,11 +196,20 @@ class FriendsRepository(
     }
 
     suspend fun queueCancelRequest(requestId: String) {
-        val updatedAt = TimestampUtils.nowRfc3339Millis()
+        val updatedAt = resolveRequestUpdatedAt(requestId)
         friendRequestDao.deleteById(requestId)
         enqueueFriendRequest(
             action = SyncAction.CANCEL,
             payload = FriendRequestPayload(requestId = requestId, updatedAt = updatedAt),
+        )
+    }
+
+    suspend fun queueRemoveFriend(userId: String) {
+        val updatedAt = TimestampUtils.nowRfc3339Millis()
+        friendDao.deleteByUserId(userId)
+        enqueueFriendRequest(
+            action = SyncAction.REMOVE,
+            payload = FriendRequestPayload(userId = userId, updatedAt = updatedAt),
         )
     }
 
@@ -163,6 +219,7 @@ class FriendsRepository(
         }
         val body = runCatching { error.response()?.errorBody()?.string() }.getOrNull()
         val parsed = body?.let { runCatching { connectionsAdapter.fromJson(it) }.getOrNull() }
+        Log.d("Friends", "handleActionConflict body=$body parsedCount=${parsed?.size}")
         if (parsed != null) {
             persistConnections(parsed)
             return true
@@ -177,10 +234,10 @@ class FriendsRepository(
             .map { it.toFriendEntity(fetchedAt) }
         val incoming = connections
             .filter { it.status.isIncoming() }
-            .map { it.toFriendRequestEntity(STATUS_INCOMING, fetchedAt) }
+            .mapNotNull { it.toFriendRequestEntity(STATUS_INCOMING, fetchedAt) }
         val outgoing = connections
             .filter { it.status.isOutgoing() }
-            .map { it.toFriendRequestEntity(STATUS_OUTGOING, fetchedAt) }
+            .mapNotNull { it.toFriendRequestEntity(STATUS_OUTGOING, fetchedAt) }
         val pendingOutgoing = friendRequestDao.getPendingSync()
             .filter { it.status == STATUS_OUTGOING }
         val outgoingUsernames = outgoing
@@ -214,6 +271,42 @@ class FriendsRepository(
             )
         )
         SyncScheduler.enqueueNow(appContext)
+    }
+
+    private suspend fun performRequestAction(
+        requestId: String,
+        action: suspend (String) -> Unit,
+    ) {
+        val trimmedId = requestId.trim()
+        if (trimmedId.isBlank()) {
+            Log.e("Friends", "performRequestAction called with blank id; forcing refresh")
+            refreshConnections(force = true)
+            return
+        }
+        Log.d("Friends", "performRequestAction id=$trimmedId")
+        try {
+            action(trimmedId)
+            refreshConnections(force = true)
+        } catch (e: HttpException) {
+            when (e.code()) {
+                404 -> refreshConnections(force = true)
+                409 -> {
+                    if (!handleActionConflict(e)) {
+                        refreshConnections(force = true)
+                    }
+                }
+                else -> throw e
+            }
+        }
+    }
+
+    private suspend fun resolveRequestUpdatedAt(requestId: String): String? {
+        val existing = friendRequestDao.getById(requestId) ?: return null
+        if (existing.isPendingSync) {
+            return null
+        }
+        val updatedAt = existing.updatedAt
+        return updatedAt.takeIf { it.isNotBlank() }
     }
 
     private fun overviewToConnections(overview: FriendsOverviewDto): List<FriendConnectionDto> {
@@ -255,17 +348,20 @@ class FriendsRepository(
     private fun FriendConnectionDto.toFriendRequestEntity(
         status: String,
         fetchedAt: String,
-    ): FriendRequestEntity {
-        val resolvedUpdatedAt = updatedAt ?: createdAt ?: fetchedAt
+    ): FriendRequestEntity? {
+        val resolvedUpdatedAt = updatedAt.orEmpty()
+        val resolvedCreatedAt = createdAt ?: fetchedAt
+        val resolvedRequestId = requestIdOrNull()
+            ?: return null
         return FriendRequestEntity(
-            requestId = requestId ?: user.id,
+            requestId = resolvedRequestId,
             userId = user.id,
             username = user.username,
             displayName = user.displayName,
             avatarPath = user.avatarPath ?: user.avatarUrl,
             avatarUpdatedAt = user.avatarUpdatedAt,
             status = status,
-            createdAt = createdAt ?: resolvedUpdatedAt,
+            createdAt = resolvedCreatedAt,
             updatedAt = resolvedUpdatedAt,
             resolvedAt = null,
             isPendingSync = false,
@@ -275,6 +371,8 @@ class FriendsRepository(
     private fun FriendConnectionDto.avatarUpdatedAtOrFallback(fetchedAt: String): String {
         return user.avatarUpdatedAt ?: fetchedAt
     }
+
+    private fun FriendConnectionDto.requestIdOrNull(): String? = requestId?.trim().takeUnless { it.isNullOrBlank() }
 
     private fun String?.isIncoming(): Boolean = this?.equals(STATUS_INCOMING, ignoreCase = true) == true
 

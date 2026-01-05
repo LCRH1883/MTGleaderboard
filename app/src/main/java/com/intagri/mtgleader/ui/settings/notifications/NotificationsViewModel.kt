@@ -27,10 +27,6 @@ class NotificationsViewModel @Inject constructor(
             viewModelScope.launch {
                 notificationsRepository.syncTokenIfNeeded()
             }
-        } else {
-            viewModelScope.launch {
-                notificationsRepository.deleteRegisteredToken()
-            }
         }
     }
 }

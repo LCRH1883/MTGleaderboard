@@ -1,6 +1,5 @@
 package com.intagri.mtgleader.ui.settings
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,7 +15,6 @@ import com.intagri.mtgleader.ui.settings.counters.manage.ManageCountersFragment
 import com.intagri.mtgleader.ui.settings.profiles.manage.ManageProfilesFragment
 import com.intagri.mtgleader.ui.settings.user.UserSettingsFragment
 import com.intagri.mtgleader.ui.history.MatchHistoryFragment
-import com.intagri.mtgleader.ui.setup.theme.ThemeActivity
 
 class SettingsFragment: Fragment() {
 
@@ -48,7 +46,6 @@ class SettingsFragment: Fragment() {
         val matchHistory: View = view.findViewById(R.id.match_history)
         val manageProfiles: View = view.findViewById(R.id.manage_profiles)
         val manageCounters: View = view.findViewById(R.id.manage_counters)
-        val themes: View = view.findViewById(R.id.themes)
         val about: View = view.findViewById(R.id.about)
         val versionText: TextView = view.findViewById(R.id.version_text)
         versionText.text = getString(R.string.version_label, BuildConfig.VERSION_NAME)
@@ -93,9 +90,6 @@ class SettingsFragment: Fragment() {
                 .replace(R.id.container, f)
                 .addToBackStack(ManageCountersFragment.TAG)
                 .commit()
-        }
-        themes.setOnClickListener {
-            startActivity(Intent(requireContext(), ThemeActivity::class.java))
         }
         about.setOnClickListener {
             val f = AboutFragment.newInstance()

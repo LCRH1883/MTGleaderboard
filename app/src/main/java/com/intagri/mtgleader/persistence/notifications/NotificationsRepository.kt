@@ -13,9 +13,6 @@ class NotificationsRepository(
     private val datastore: Datastore,
 ) {
     suspend fun syncTokenIfNeeded() {
-        if (!datastore.friendRequestNotificationsEnabled) {
-            return
-        }
         val user = userProfileLocalStore.getEntity() ?: return
         val token = fetchFcmToken() ?: return
         val currentToken = datastore.registeredFcmToken
@@ -27,9 +24,6 @@ class NotificationsRepository(
     }
 
     suspend fun registerToken(token: String) {
-        if (!datastore.friendRequestNotificationsEnabled) {
-            return
-        }
         val user = userProfileLocalStore.getEntity() ?: return
         runCatching { registerToken(token, user.id) }
     }

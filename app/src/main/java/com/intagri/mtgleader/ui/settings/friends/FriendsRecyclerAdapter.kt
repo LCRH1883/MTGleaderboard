@@ -74,7 +74,7 @@ class FriendsRecyclerAdapter(
                 )
                 FriendStatus.ACCEPTED -> Triple(
                     R.string.friend_status_accepted,
-                    null,
+                    R.string.friend_action_remove,
                     null
                 )
                 FriendStatus.UNKNOWN -> Triple(

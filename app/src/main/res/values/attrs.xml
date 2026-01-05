@@ -34,9 +34,4 @@
     <declare-styleable name="CounterIconView">
         <attr name="labelMaxTextSize" format="dimension" />
     </declare-styleable>
-    <declare-styleable name="ThemeItemView">
-        <!-- This must be prefixed to not clash with android/app:theme attributes -->
-        <attr name="scTheme" format="reference"/>
-        <attr name="label" format="string" />
-    </declare-styleable>
 </resources>

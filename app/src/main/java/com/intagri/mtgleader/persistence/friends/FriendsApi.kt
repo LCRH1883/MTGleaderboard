@@ -2,6 +2,7 @@ package com.intagri.mtgleader.persistence.friends
 
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
@@ -25,18 +26,25 @@ interface FriendsApi {
     @POST("v1/friends/requests/{id}/accept")
     suspend fun acceptRequest(
         @Path("id") id: String,
-        @Body request: FriendActionRequest? = null,
     )
 
     @POST("v1/friends/requests/{id}/decline")
     suspend fun declineRequest(
         @Path("id") id: String,
-        @Body request: FriendActionRequest? = null,
     )
 
     @POST("v1/friends/requests/{id}/cancel")
     suspend fun cancelRequest(
         @Path("id") id: String,
-        @Body request: FriendActionRequest? = null,
+    )
+
+    @POST("v1/friends/{id}/remove")
+    suspend fun removeFriend(
+        @Path("id") id: String,
+    )
+
+    @DELETE("v1/friends/{id}")
+    suspend fun deleteFriend(
+        @Path("id") id: String,
     )
 }
