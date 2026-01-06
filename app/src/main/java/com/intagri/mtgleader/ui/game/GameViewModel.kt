@@ -628,28 +628,8 @@ class GameViewModel @Inject constructor(
         if (aliveIds.isEmpty()) {
             return playerOrderIds
         }
-        val clockwise = _playerRotationClockwise.value != false
-        val baseOrder = playerOrderIds.filter { aliveIds.contains(it) }
-        if (tabletopType == TabletopType.LIST || tabletopType == TabletopType.NONE) {
-            return if (clockwise) baseOrder else baseOrder.reversed()
-        }
-        val positions = tabletopType.positions
-        if (positions.isEmpty()) {
-            return if (clockwise) baseOrder else baseOrder.reversed()
-        }
-        if (positions.contains(TableLayoutPosition.SOLO_PANEL)) {
-            return baseOrder.take(1)
-        }
-        val positionToPlayer = mutableMapOf<TableLayoutPosition, Int>()
-        for (i in positions.indices) {
-            if (i < baseOrder.size) {
-                positionToPlayer[positions[i]] = baseOrder[i]
-            }
-        }
-        val orderedPlayers = clockwiseTurnPositions
-            .filter { positionToPlayer.containsKey(it) }
-            .mapNotNull { positionToPlayer[it] }
-        return if (clockwise) orderedPlayers else orderedPlayers.reversed()
+        val ordered = buildTurnOrder(playerOrderIds)
+        return ordered.filter { aliveIds.contains(it) }
     }
 
     fun resetGame() {
@@ -1047,10 +1027,13 @@ class GameViewModel @Inject constructor(
         if (alive.isEmpty()) {
             return
         }
-        val order = playerOrderIds
+        val order = buildTurnOrder(playerOrderIds)
+        if (order.isEmpty()) {
+            return
+        }
         val eliminatedIndex = order.indexOf(eliminatedPlayerId)
         val nextAlive = if (eliminatedIndex == -1) {
-            alive.first()
+            order.firstOrNull { alive.contains(it) } ?: alive.first()
         } else {
             (1..order.size)
                 .map { offset -> order[(eliminatedIndex + offset) % order.size] }
@@ -1059,6 +1042,33 @@ class GameViewModel @Inject constructor(
         _currentTurnPlayerId.value = nextAlive
         currentTurnStartElapsedMs = SystemClock.elapsedRealtime()
         resetTurnTimer()
+    }
+
+    private fun buildTurnOrder(baseOrder: List<Int>): List<Int> {
+        if (baseOrder.isEmpty()) {
+            return emptyList()
+        }
+        val clockwise = _playerRotationClockwise.value != false
+        if (tabletopType == TabletopType.LIST || tabletopType == TabletopType.NONE) {
+            return if (clockwise) baseOrder else baseOrder.reversed()
+        }
+        val positions = tabletopType.positions
+        if (positions.isEmpty()) {
+            return if (clockwise) baseOrder else baseOrder.reversed()
+        }
+        if (positions.contains(TableLayoutPosition.SOLO_PANEL)) {
+            return baseOrder.take(1)
+        }
+        val positionToPlayer = mutableMapOf<TableLayoutPosition, Int>()
+        for (i in positions.indices) {
+            if (i < baseOrder.size) {
+                positionToPlayer[positions[i]] = baseOrder[i]
+            }
+        }
+        val orderedPlayers = clockwiseTurnPositions
+            .filter { positionToPlayer.containsKey(it) }
+            .mapNotNull { positionToPlayer[it] }
+        return if (clockwise) orderedPlayers else orderedPlayers.reversed()
     }
 
     private fun buildMatchPayload(
